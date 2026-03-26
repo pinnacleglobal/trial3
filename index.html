@@ -45,39 +45,56 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxHCaJl9AFMP2dNZPnX0WJjVtYuqFEtWVLujEtb3WPy2eRO2c85o0UtUV99WFKsxa7_/exec";
+     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtlKG5GVmefAR0_iHV6INCMCod8wKi1ki-PrnTnTGXm7gQn_IRZJOf5BkMlKzLCdks/exec";
 
-        async function login() {
-            const code = document.getElementById('loginCode').value;
-            const msg = document.getElementById('msg');
-            msg.innerText = "Authenticating...";
+function login() {
+    const code = document.getElementById('loginCode').value;
+    const msg = document.getElementById('msg');
+    msg.innerText = "Authenticating...";
 
-            try {
-                const response = await fetch(`${SCRIPT_URL}?code=${code}`);
-                const data = await response.json();
+    // Remove any old script tags from previous attempts
+    const oldScript = document.getElementById('jsonp-request');
+    if (oldScript) oldScript.remove();
 
-                if (data) {
-                    showDashboard(data);
-                } else {
-                    msg.innerText = "Invalid Login Code. Please try again.";
-                }
-            } catch (err) {
-                msg.innerText = "Connection error. Check your Script URL.";
-            }
-        }
+    // Create a dynamic script tag (the JSONP trick)
+    const script = document.createElement('script');
+    script.id = 'jsonp-request';
+    script.src = `${SCRIPT_URL}?code=${code}&callback=handleResponse`;
+    
+    // If the script fails to load, show error
+    script.onerror = () => { msg.innerText = "Connection error. Check URL or Permissions."; };
+    
+    document.body.appendChild(script);
+}
 
-        function showDashboard(data) {
-            document.getElementById('loginPage').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-            
-            document.getElementById('stName').innerText = data.name;
-            document.getElementById('stAdm').innerText = data.admissionNo;
-            document.getElementById('stFather').innerText = data.father;
-            document.getElementById('stMother').innerText = data.mother;
-            document.getElementById('stAddress').innerText = data.address;
-            document.getElementById('stDob').innerText = new Date(data.dob).toLocaleDateString();
-            document.getElementById('stPhoto').src = data.photo || "https://via.placeholder.com/150?text=No+Photo";
-        }
+// This function handles the data once it comes back from Google
+function handleResponse(data) {
+    const msg = document.getElementById('msg');
+    if (data) {
+        showDashboard(data);
+    } else {
+        msg.innerText = "Invalid Login Code. Please try again.";
+    }
+}
+
+function showDashboard(data) {
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    
+    document.getElementById('stName').innerText = data.name;
+    document.getElementById('stAdm').innerText = data.admissionNo;
+    document.getElementById('stFather').innerText = data.father;
+    document.getElementById('stMother').innerText = data.mother;
+    document.getElementById('stAddress').innerText = data.address;
+    
+    // Formatting the date
+    if (data.dob) {
+        const d = new Date(data.dob);
+        document.getElementById('stDob').innerText = d.toLocaleDateString();
+    }
+    
+    document.getElementById('stPhoto').src = data.photo || "https://via.placeholder.com/150?text=No+Photo";
+}
     </script>
 </body>
 </html>
