@@ -93,7 +93,25 @@ function showDashboard(data) {
         document.getElementById('stDob').innerText = d.toLocaleDateString();
     }
     
-    document.getElementById('stPhoto').src = data.photo || "https://via.placeholder.com/150?text=No+Photo";
+    // --- PHOTO FIX START ---
+    let photoUrl = data.photo;
+
+    if (photoUrl && photoUrl.includes("drive.google.com")) {
+        // Extract the ID from the link and convert to direct download URL
+        const fileId = photoUrl.match(/[-\w]{25,}/); 
+        if (fileId) {
+            photoUrl = `https://lh3.googleusercontent.com/u/0/d/${fileId}`;
+        }
+    }
+
+    const stPhoto = document.getElementById('stPhoto');
+    stPhoto.src = photoUrl || "https://via.placeholder.com/150?text=No+Photo";
+    
+    // Error handling if the link is broken or restricted
+    stPhoto.onerror = function() {
+        this.src = "https://via.placeholder.com/150?text=Check+Permissions";
+    };
+    // --- PHOTO FIX END ---
 }
     </script>
 </body>
