@@ -27,7 +27,19 @@
         th{ background:#0b3d91; color:white; }
         tr:nth-child(even){ background:#e8f1ff; }
         .fee-cards{ display:none; padding:15px; }
-        .fee-card{ border-radius:12px; padding:16px; margin-bottom:15px; box-shadow:0 2px 8px rgba(0,0,0,0.12); background: white; }
+        .fee-card {
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    background: #ffffff; /* Default background */
+    border: 1px solid #ddd;
+}
+
+/* Every second card gets the blue background */
+.fee-card:nth-child(even) {
+    background: #e8f1ff !important;
+}
         @media(max-width:600px){ .table-container{display:none;} .fee-cards{display:block;} }
         .loader{ display:none; text-align:center; padding:30px; }
         .spinner{ border:6px solid #eee; border-top:6px solid #0b3d91; border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:auto; }
