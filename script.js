@@ -20,7 +20,6 @@ async function login() {
     document.getElementById("loader").style.display = "block";
 
     try {
-        // Parallel Fetching for Maximum Speed
         const urls = [
             `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheets.aw}?key=${apiKey}`,
             `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheets.master}?key=${apiKey}`,
@@ -46,18 +45,16 @@ async function login() {
 
         const mRow = masterRows.find(r => r[1] == student[1]);
         if (!mRow) {
-            alert("Master Data missing.");
+            alert("Master Data missing. Contact Admin.");
             resetLoader();
             return;
         }
 
-        // Process all data sections
         handlePermissions(dsRows);
         populateStudentProfile(student, mRow);
         renderFees(student[1], mRow, feesRows);
         setupDateSheet(dsRows, mRow[14]);
 
-        // UI Transition
         document.getElementById("loginBox").style.display = "none";
         document.getElementById("loader").style.display = "none";
         document.getElementById("portal").style.display = "block";
@@ -66,7 +63,7 @@ async function login() {
 
     } catch (e) {
         console.error("Login Error:", e);
-        alert("Connection Error. Please try again.");
+        alert("Connection Error. Try again.");
         resetLoader();
     }
 }
@@ -107,13 +104,12 @@ function populateStudentProfile(aw, master) {
     document.getElementById("phone").innerText = aw[22] || "N/A";
     document.getElementById("address").innerText = aw[7] || "N/A";
     
-    // Centered Photo Logic
     const photoImg = document.getElementById("studentPhoto");
     if (aw[28]) {
         const fileIdMatch = aw[28].match(/[-\w]{25,}/);
         if (fileIdMatch) {
             photoImg.src = `https://drive.google.com/thumbnail?id=${fileIdMatch[0]}&sz=w500`;
-            photoImg.onload = () => photoImg.style.display = "block";
+            photoImg.onload = () => photoImg.style.display = "inline-block";
         }
     }
 }
@@ -130,21 +126,12 @@ function renderFees(adm, mData, fRows) {
         if (r[2] == adm) {
             let amt = parseFloat(r[5]) || 0;
             if (r[7] === "2026-27" && r[6]?.toLowerCase() === "monthly fees") totalPaid += amt;
-            
-            // Desktop Table Rows
-            tableHtml += `<tr><td class="date-col">${r[1]||''}</td><td>${r[0]||''}</td><td>₹${amt}</td><td>${r[6]||''}</td><td>${r[7]||''}</td><td>${r[8]||''}</td><td>${r[9]||''}</td><td>${r[10]||''}</td><td>${r[11]||''}</td></tr>`;
-            
-            // Mobile Cards with Bold Blue Labels
+            tableHtml += `<tr><td>${r[1]||''}</td><td>${r[0]||''}</td><td>₹${amt}</td><td>${r[6]||''}</td><td>${r[7]||''}</td><td>${r[8]||''}</td><td>${r[9]||''}</td><td>${r[10]||''}</td><td>${r[11]||''}</td></tr>`;
             cardsHtml += `<div class="fee-card">
-                <div><span class="card-label">Date:</span> ${r[1]||''}</div>
-                <div><span class="card-label">Slip Number:</span> ${r[0]||''}</div>
-                <div><span class="card-label">Amount Paid:</span> ₹${amt}</div>
-                <div><span class="card-label">Fee Type:</span> ${r[6]||''}</div>
-                <div><span class="card-label">Session:</span> ${r[7]||''}</div>
-                <div><span class="card-label">Tuition Fee Months:</span> ${r[8]||''}</div>
-                <div><span class="card-label">Transport Fee Months:</span> ${r[9]||''}</div>
-                <div><span class="card-label">Exam Fee Months:</span> ${r[10]||''}</div>
-                <div><span class="card-label">Payment Mode:</span> ${r[11]||''}</div>
+                <div><b>Date:</b> ${r[1]||''}</div><div><b>Slip:</b> ${r[0]||''}</div><div><b>Amount:</b> ₹${amt}</div>
+                <div><b>Type:</b> ${r[6]||''}</div><div><b>Session:</b> ${r[7]||''}</div>
+                <div><b>Tuition Months:</b> ${r[8]||''}</div><div><b>Transport Months:</b> ${r[9]||''}</div>
+                <div><b>Exam Months:</b> ${r[10]||''}</div><div><b>Mode:</b> ${r[11]||''}</div>
             </div>`;
         }
     });
@@ -152,7 +139,14 @@ function renderFees(adm, mData, fRows) {
     document.getElementById("feeTable").innerHTML = tableHtml || "<tr><td colspan='9'>No records found</td></tr>";
     document.getElementById("feeCards").innerHTML = cardsHtml || "No records found";
     
-    // Summary Calculations
+    document.getElementById("monthlyTuition").innerText = "₹" + monthly;
+    document.getElementById("tuitionMonths").innerText = mData[6] || 0;
+    document.getElementById("transportFees").innerText = "₹" + (mData[7] || 0);
+    document.getElementById("transportMonths").innerText = mData[8] || 0;
+    document.getElementById("examFee").innerText = "₹" + (mData[9] || 1000);
+    document.getElementById("prevRemain").innerText = "₹" + remain;
+    document.getElementById("discount").innerText = "₹" + Math.round(disc);
+
     let totalFee = ((monthly - disc) * (parseFloat(mData[6]) || 0)) + 
                    ((parseFloat(mData[7]) || 0) * (parseFloat(mData[8]) || 0)) + 
                    (parseFloat(mData[9]) || 1000) + remain;
@@ -174,16 +168,15 @@ function setupDateSheet(rows, studentClass) {
     let classCol = -1;
     const headerRow = rows[1]; 
     for(let j=1; j<=15; j++) { if(headerRow[j] == studentClass) { classCol = j; break; } }
-    
     let html = "";
     const isMajor = examType.includes("Half Yearly") || examType.includes("Annual");
     if(classCol !== -1) {
         if(isMajor) {
             html += `<tr class="ds-type-header"><td colspan="2">Minor Exams</td></tr>`;
-            [3, 4].forEach(idx => { if(rows[idx]?.[0]) html += `<tr><td class="date-col">${rows[idx][0]}</td><td>${rows[idx][classCol] || '-'}</td></tr>`; });
+            [3, 4].forEach(idx => { if(rows[idx]?.[0]) html += `<tr><td>${rows[idx][0]}</td><td>${rows[idx][classCol] || '-'}</td></tr>`; });
             html += `<tr class="ds-type-header"><td colspan="2">Major Exams</td></tr>`;
         }
-        [6, 7, 8, 9, 10, 11].forEach(idx => { if(rows[idx]?.[0]) html += `<tr><td class="date-col">${rows[idx][0]}</td><td>${rows[idx][classCol] || '-'}</td></tr>`; });
+        [6, 7, 8, 9, 10, 11].forEach(idx => { if(rows[idx]?.[0]) html += `<tr><td>${rows[idx][0]}</td><td>${rows[idx][classCol] || '-'}</td></tr>`; });
     }
     document.getElementById("dsBody").innerHTML = html || "<tr><td colspan='2'>Nothing to show</td></tr>";
 }
@@ -198,7 +191,6 @@ function populateFeeSelectors(exFee, monthly, transport) {
     for(let i=0; i<=12; i++) t.innerHTML += `<option value="${i}">${i}</option>`;
     for(let i=0; i<=11; i++) tr.innerHTML += `<option value="${i}">${i}</option>`;
     for(let i=0; i<=2; i++) ex.innerHTML += `<option value="${i}">${i}</option>`;
-    
     const updateCalc = () => {
         let total = (t.value * (monthly - originalDiscount)) + (tr.value * transport) + (ex.value * (exFee/2));
         res.innerText = "₹" + Math.round(total);
