@@ -1,88 +1,63 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Student Portal</title>
 
 <style>
-body{
-font-family:Arial;
-margin:0;
-background:#f2f5ff;
-}
+body{font-family:Arial;margin:0;background:#f2f5ff;}
 
-/* HEADER */
 .header{
-background:#0b3d91;
-text-align:center;
-padding:20px;
-color:white;
-position:relative;
+background:#0b3d91;color:white;text-align:center;padding:20px;position:relative;
 }
 
 .bell{
-position:absolute;
-right:20px;
-top:20px;
-font-size:22px;
+position:absolute;right:20px;top:20px;font-size:22px;cursor:pointer;
+}
+
+.login-box{text-align:center;padding:30px;}
+
+button{
+padding:12px 20px;
+background:#0b3d91;
+color:white;
+border:none;
+border-radius:6px;
 cursor:pointer;
 }
 
-/* DASHBOARD BUTTONS */
-.dashboard{
-padding:20px;
-text-align:center;
+.section-title{
+background:#d4af37;
+padding:10px;margin:15px;border-radius:6px;text-align:center;font-weight:bold;
 }
 
+.profile{
+background:white;margin:15px;padding:15px;border-radius:10px;
+}
+
+/* DASHBOARD GRID */
 .grid{
 display:grid;
 grid-template-columns:1fr 1fr;
 gap:15px;
+padding:15px;
 }
 
 .grid button{
 padding:20px;
 font-size:18px;
-border:none;
 border-radius:10px;
-background:#0b3d91;
-color:white;
-cursor:pointer;
 }
 
-.grid button.disabled{
-background:gray;
+.disabled{
+background:gray !important;
 cursor:not-allowed;
 }
 
-/* COMMON */
-.section-title{
-background:#d4af37;
-padding:12px;
-margin:15px;
-border-radius:6px;
-text-align:center;
-font-weight:bold;
-}
-
-.profile{
-background:white;
-margin:15px;
-padding:20px;
-border-radius:10px;
-}
-
-/* BACK BUTTON */
 .back-btn{
 margin:15px;
-padding:10px 20px;
-background:#0b3d91;
-color:white;
-border:none;
-border-radius:6px;
-cursor:pointer;
 }
+
 </style>
 </head>
 
@@ -94,7 +69,7 @@ cursor:pointer;
 </div>
 
 <!-- LOGIN -->
-<div id="loginBox" style="text-align:center;padding:30px;">
+<div id="loginBox" class="login-box">
 <input id="loginCode" placeholder="Enter Login Code"><br><br>
 <button onclick="login()">Login</button>
 </div>
@@ -104,52 +79,73 @@ cursor:pointer;
 <!-- DASHBOARD -->
 <div id="dashboard" style="display:none">
 
-<div class="profile" style="text-align:center;">
+<div class="profile" style="text-align:center;background:#0b3d91;color:white;">
 <h2 id="welcomeName"></h2>
+<img id="studentPhoto" style="display:none;width:120px;height:120px;border-radius:50%;">
 </div>
 
 <div class="section-title">Student Details</div>
-
 <div class="profile">
 <div>Name: <span id="studentName"></span></div>
-<div>Class: <span id="class"></span></div>
 <div>Admission: <span id="adm"></span></div>
+<div>Class: <span id="class"></span></div>
+<div>Father: <span id="father"></span></div>
+<div>Mother: <span id="mother"></span></div>
+<div>Phone: <span id="phone"></span></div>
+<div>Address: <span id="address"></span></div>
 </div>
 
-<div class="dashboard">
 <div class="grid">
 <button onclick="openFees()">Fees</button>
-<button id="attendanceBtn" onclick="openAttendance()">Attendance</button>
+<button onclick="openAttendance()">Attendance</button>
 <button id="dsBtn" onclick="openDateSheet()">Date Sheet</button>
 <button id="resultBtn" onclick="openResult()">Result</button>
-</div>
 </div>
 
 </div>
 
 <!-- FEES PAGE -->
 <div id="feesPage" style="display:none">
+
 <button class="back-btn" onclick="goBack()">⬅ Back</button>
 
-<div class="section-title">Fees Section</div>
-<div class="profile">Same Fee UI will remain here (use your existing code)</div>
+<div class="section-title">Paid Fee Details</div>
+<div id="feeTable"></div>
+
+<div class="section-title">Fee Structure</div>
+<div class="profile">
+<div>Monthly Tuition: <span id="monthlyTuition"></span></div>
+<div>Tuition Months: <span id="tuitionMonths"></span></div>
+<div>Transport Fees: <span id="transportFees"></span></div>
+<div>Transport Months: <span id="transportMonths"></span></div>
+<div>Exam Fee: <span id="examFee"></span></div>
+<div>Previous Remain: <span id="prevRemain"></span></div>
+<div>Discount: <span id="discount"></span></div>
+</div>
+
+<div class="section-title">Fee Summary</div>
+<div class="profile">
+<div>Total Paid: <span id="totalPaid"></span></div>
+<div>Balance: <span id="feeBalance"></span></div>
+</div>
+
 </div>
 
 <!-- ATTENDANCE -->
 <div id="attendancePage" style="display:none">
-<button class="back-btn" onclick="goBack()">⬅ Back</button>
+<button onclick="goBack()">⬅ Back</button>
 <div class="profile">Nothing to show</div>
 </div>
 
 <!-- DATE SHEET -->
 <div id="dsPage" style="display:none">
-<button class="back-btn" onclick="goBack()">⬅ Back</button>
+<button onclick="goBack()">⬅ Back</button>
 <div id="dsContent" class="profile"></div>
 </div>
 
 <!-- RESULT -->
 <div id="resultPage" style="display:none">
-<button class="back-btn" onclick="goBack()">⬅ Back</button>
+<button onclick="goBack()">⬅ Back</button>
 <div class="profile">No result to show now</div>
 </div>
 
