@@ -129,6 +129,7 @@ function populateStudentProfile(aw, master) {
 async function handleFees(adm, mData) {
     let resp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${feesSheet}?key=${apiKey}`);
     let rows = (await resp.json()).values || [];
+    
     let monthlyTuition = parseFloat(mData[4]) || 0;
     let prevRemain = parseFloat(mData[3]) || 0;
     let discount = parseFloat(mData[5]) || 0;
@@ -139,21 +140,55 @@ async function handleFees(adm, mData) {
     let examFee = parseFloat(mData[9]) || 1000;
 
     let tableHtml = "", cardsHtml = "", totalPaid = 0;
-    for (let i = 1; i < rows.length; i++) {
-        let r = rows[i];
-        if (r[2] == adm) {
-            let amt = parseFloat(r[5]) || 0;
-            if (r[7] == "2026-27" && r[6]?.toLowerCase() == "monthly fees") totalPaid += amt;
-            tableHtml += `<tr><td>${r[1]}</td><td>${r[0]}</td><td>₹${amt}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[8]}</td><td>${r[9]}</td><td>${r[10]}</td><td>${r[11]}</td></tr>`;
-            cardsHtml += `<div class="fee-card"><div><b>Date:</b> ${r[1]}</div><div><b>Slip:</b> ${r[0]}</div><div><b>Amount:</b> ₹${amt}</div></div>`;
+    
+    // Filter rows for this student
+    const studentFees = rows.slice(1).filter(r => r[2] == adm);
+
+    studentFees.forEach((r, index) => {
+        let date = r[1] || "";
+        let slip = r[0] || "";
+        let amount = parseFloat(r[5]) || 0;
+        let feeType = r[6] || "";
+        let session = r[7] || "";
+        let tMonths = r[8] || "";
+        let trMonths = r[9] || "";
+        let exMonths = r[10] || "";
+        let mode = r[11] || "";
+
+        if (session == "2026-27" && feeType.toLowerCase() == "monthly fees") {
+            totalPaid += amount;
         }
-    }
+
+        // Table Row (Desktop)
+        tableHtml += `<tr>
+            <td>${date}</td><td>${slip}</td><td>₹${amount}</td>
+            <td>${feeType}</td><td>${session}</td><td>${tMonths}</td>
+            <td>${trMonths}</td><td>${exMonths}</td><td>${mode}</td>
+        </tr>`;
+
+        // Card (Mobile) - Re-adding all fields and alternating logic
+        cardsHtml += `
+        <div class="fee-card">
+            <div><b>Date:</b> ${date}</div>
+            <div><b>Slip Number:</b> ${slip}</div>
+            <div><b>Amount Paid:</b> ₹${amount}</div>
+            <div><b>Fee Type:</b> ${feeType}</div>
+            <div><b>Session:</b> ${session}</div>
+            <div><b>Tuition Fee Months:</b> ${tMonths}</div>
+            <div><b>Transport Fee Months:</b> ${trMonths}</div>
+            <div><b>Exam Fee Months:</b> ${exMonths}</div>
+            <div><b>Payment Mode:</b> ${mode}</div>
+        </div>`;
+    });
 
     let totalFee = ((monthlyTuition - discount) * tuitionMonths) + (transportFees * transportMonths) + examFee + prevRemain;
     let balance = Math.round(totalFee - totalPaid);
 
+    // Update the DOM
     document.getElementById("feeTable").innerHTML = tableHtml;
     document.getElementById("feeCards").innerHTML = cardsHtml;
+    
+    // Update Structure and Summary
     document.getElementById("monthlyTuition").innerText = "₹" + monthlyTuition;
     document.getElementById("tuitionMonths").innerText = tuitionMonths;
     document.getElementById("transportFees").innerText = "₹" + transportFees;
@@ -162,6 +197,7 @@ async function handleFees(adm, mData) {
     document.getElementById("prevRemain").innerText = "₹" + prevRemain;
     document.getElementById("discount").innerText = "₹" + Math.round(discount);
     document.getElementById("totalPaid").innerText = "₹" + totalPaid;
+    
     let balEl = document.getElementById("feeBalance");
     balEl.innerText = "₹" + balance;
     balEl.style.color = balance > 0 ? "red" : "green";
@@ -169,7 +205,6 @@ async function handleFees(adm, mData) {
     populateFeeSelectors(examFee, monthlyTuition, transportFees);
     setupPaymentLink(balance, "payBalanceBtn");
 }
-
 function populateFeeSelectors(exFee, monthly, transport) {
     const t = document.getElementById("calcTuitionMonths");
     const tr = document.getElementById("calcTransportMonths");
