@@ -1,185 +1,145 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Student Portal</title>
-<link rel="icon" type="image/png" href="images/logo.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Student Portal</title>
+    <link rel="icon" type="image/png" href="images/logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { font-family: Arial; margin: 0; background: #f2f5ff; }
+        .header { background: #0b3d91; text-align: center; padding: 20px; color: white; position: relative; }
+        .logo { width: 140px; margin-bottom: 10px; filter: drop-shadow(0 0 6px rgba(255,255,255,0.9)); }
+        
+        /* Notification Bell */
+        .notif-bell { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; color: #d4af37; }
 
-<style>
-body{font-family:Arial;margin:0;background:#f2f5ff;}
+        .login-box { text-align: center; padding: 30px; }
+        input, select { padding: 12px; width: 230px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 12px 25px; font-size: 16px; background: #0b3d91; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        
+        /* Dashboard Grid */
+        .nav-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; }
+        .nav-btn { background: white; padding: 30px 10px; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-weight: bold; color: #0b3d91; cursor: pointer; }
+        .nav-btn i { font-size: 30px; display: block; margin-bottom: 10px; color: #d4af37; }
+        .nav-btn.frozen { opacity: 0.5; cursor: not-allowed; background: #e0e0e0; }
 
-.header{
-background:#0b3d91;
-text-align:center;
-padding:20px;
-color:white;
-position:relative;
-}
+        .section-title { background: #d4af37; color: black; padding: 12px; margin: 15px; border-radius: 6px; font-size: 18px; font-weight: bold; text-align: center; }
+        .profile { background: white; margin: 15px; padding: 20px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .info { font-size: 15px; margin: 8px 0; }
+        .label { font-weight: bold; }
 
-.logo{
-width:140px;
-margin-bottom:10px;
-filter: drop-shadow(0 0 6px rgba(255,255,255,0.9));
-}
+        /* Tables & Cards */
+        .table-container { margin: 15px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; font-size: 14px; }
+        th { background: #0b3d91; color: white; }
+        .back-btn { margin: 15px; background: #666; }
 
-.bell{
-position:absolute;
-right:20px;
-top:20px;
-font-size:22px;
-cursor:pointer;
-}
+        .loader { display: none; text-align: center; padding: 30px; }
+        .spinner { border: 6px solid #eee; border-top: 6px solid #0b3d91; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-.section-title{
-background:#d4af37;
-padding:12px;
-margin:15px;
-border-radius:6px;
-text-align:center;
-font-weight:bold;
-}
-
-.profile{
-background:white;
-margin:15px;
-padding:20px;
-border-radius:10px;
-box-shadow:0 2px 6px rgba(0,0,0,0.1);
-}
-
-.info{margin:8px 0;}
-.label{font-weight:bold;}
-
-.grid{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:15px;
-margin:15px;
-}
-
-.grid button{
-padding:20px;
-font-size:16px;
-background:#0b3d91;
-color:white;
-border:none;
-border-radius:10px;
-cursor:pointer;
-}
-
-.disabled{
-background:gray !important;
-cursor:not-allowed;
-}
-
-.back-btn{
-margin:15px;
-padding:10px 20px;
-background:#0b3d91;
-color:white;
-border:none;
-border-radius:6px;
-}
-</style>
+        @media(max-width: 600px) { .table-container { display: none; } .fee-cards { display: block; } }
+        .fee-cards { display: none; padding: 15px; }
+        .fee-card { border-radius: 12px; padding: 16px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.12); background: white; }
+        .pay-btn { background: #28a745; color: white; padding: 12px 25px; border-radius: 4px; border: none; }
+        .whatsapp-btn { background: #25D366 !important; color: white !important; padding: 8px 12px !important; border-radius: 6px !important; display: inline-block; margin-top: 5px; text-decoration: none; font-size: 14px; }
+    </style>
 </head>
-
 <body>
 
 <div class="header">
-<img src="images/logo.png" class="logo">
-<h2>Student Portal</h2>
-<div class="bell" onclick="openNotification()">🔔</div>
+    <div id="notifIcon" class="notif-bell" onclick="showNotification()" style="display:none;"><i class="fas fa-bell"></i></div>
+    <img src="images/logo.png" class="logo">
+    <h2>Student Portal</h2>
 </div>
 
-<!-- LOGIN -->
-<div class="login-box" id="loginBox" style="text-align:center;padding:30px;">
-<input type="text" id="loginCode" placeholder="Enter Login Code">
-<br><br>
-<button id="loginBtn">Login</button>
+<div class="login-box" id="loginBox">
+    <h3>Student Login</h3>
+    <input type="text" id="loginCode" placeholder="Enter Login Code">
+    <br><br>
+    <button id="loginBtn">Login</button>
 </div>
 
-<div id="loader" style="display:none;text-align:center;">Loading...</div>
-
-<!-- DASHBOARD -->
-<div id="dashboard" style="display:none">
-
-<div class="profile" style="text-align:center;background:#0b3d91;color:white;">
-<h2 id="welcomeName"></h2>
-
-<img id="studentPhoto"
-style="display:none;width:130px;height:130px;border-radius:50%;border:4px solid white;margin-top:15px;">
+<div class="loader" id="loader">
+    <div class="spinner"></div><br>Loading...
 </div>
 
-<div class="section-title">Student Details</div>
+<div id="portal" style="display:none">
+    
+    <div id="view-dashboard">
+        <div class="profile" style="text-align:center; background:#0b3d91; color:white;">
+            <h2 id="welcomeName"></h2>
+            <img id="studentPhoto" src="" style="display:none; width:120px; height:120px; border-radius:50%; border:3px solid white; margin-top:15px; object-fit:cover;">
+        </div>
 
-<div class="profile">
-<div class="info"><span class="label">Student Name :</span> <span id="studentName"></span></div>
-<div class="info"><span class="label">Admission Number :</span> <span id="adm"></span></div>
-<div class="info"><span class="label">Class :</span> <span id="class"></span></div>
-<div class="info"><span class="label">Father's Name :</span> <span id="father"></span></div>
-<div class="info"><span class="label">Mother's Name :</span> <span id="mother"></span></div>
-<div class="info"><span class="label">Phone Number :</span> <span id="phone"></span></div>
-<div class="info"><span class="label">Address :</span> <span id="address"></span></div>
-</div>
+        <div class="section-title">Student Details</div>
+        <div class="profile">
+            <div class="info"><span class="label">Name :</span> <span id="studentName"></span></div>
+            <div class="info"><span class="label">Admission No :</span> <span id="adm"></span></div>
+            <div class="info"><span class="label">Class :</span> <span id="class"></span></div>
+            <div class="info"><span class="label">Father :</span> <span id="father"></span></div>
+        </div>
 
-<div class="grid">
-<button onclick="openFees()">Fees</button>
-<button onclick="openAttendance()">Attendance</button>
-<button id="dsBtn" onclick="openDateSheet()">Date Sheet</button>
-<button id="resultBtn" onclick="openResult()">Result</button>
-</div>
+        <div class="nav-grid">
+            <div class="nav-btn" onclick="showView('view-fees')"><i class="fas fa-file-invoice-dollar"></i>Fees</div>
+            <div class="nav-btn" onclick="showView('view-attendance')"><i class="fas fa-calendar-check"></i>Attendance</div>
+            <div id="btn-datesheet" class="nav-btn frozen"><i class="fas fa-calendar-alt"></i>Date-Sheet</div>
+            <div id="btn-result" class="nav-btn frozen"><i class="fas fa-poll"></i>Result</div>
+        </div>
+        <div class="logout"><button onclick="location.reload()">Logout</button></div>
+    </div>
 
-</div>
+    <div id="view-fees" style="display:none">
+        <button class="back-btn" onclick="showView('view-dashboard')">← Back to Dashboard</button>
+        <div class="section-title">Paid Fee Details</div>
+        <div class="table-container">
+            <table>
+                <thead><tr><th>Date</th><th>Slip</th><th>Amount</th><th>Type</th><th>Session</th><th>T-Months</th><th>Tr-Months</th><th>Ex-Months</th><th>Mode</th></tr></thead>
+                <tbody id="feeTable"></tbody>
+            </table>
+        </div>
+        <div class="fee-cards" id="feeCards"></div>
+        <div class="section-title">Fee Structure</div>
+        <div class="profile">
+            <div class="info"><span class="label">Monthly Tuition:</span> <span id="monthlyTuition"></span></div>
+            <div class="info"><span class="label">Exam Fee:</span> <span id="examFee"></span></div>
+            <div class="info"><span class="label">Balance:</span> <span id="feeBalance" style="font-weight:bold"></span></div>
+            <button id="payBalanceBtn" class="pay-btn">Pay Balance</button>
+        </div>
+        <div class="section-title">Calculate Fees</div>
+        <div class="profile">
+            <div class="info"><label>Tuition Months:</label> <select id="calcTuitionMonths"></select></div>
+            <div class="info"><label>Transport Months:</label> <select id="calcTransportMonths"></select></div>
+            <div class="info"><label>Exam Months:</label> <select id="calcExamMonths"></select></div>
+            <div class="info"><span class="label">Total:</span> <span id="calcTotal">₹0</span></div>
+            <button id="payNowBtn" class="pay-btn">Pay Calculated</button>
+        </div>
+    </div>
 
-<!-- FEES PAGE (YOUR ORIGINAL UI) -->
-<div id="feesPage" style="display:none">
+    <div id="view-attendance" style="display:none">
+        <button class="back-btn" onclick="showView('view-dashboard')">← Back</button>
+        <div class="profile" style="text-align:center;"><h3>Nothing to show</h3></div>
+    </div>
 
-<button class="back-btn" onclick="goBack()">⬅ Back</button>
+    <div id="view-datesheet" style="display:none">
+        <button class="back-btn" onclick="showView('view-dashboard')">← Back</button>
+        <div class="section-title" id="ds-title">Date Sheet</div>
+        <div class="table-container">
+            <table id="dsTable">
+                <thead><tr><th>Date</th><th>Subject</th></tr></thead>
+                <tbody id="dsBody"></tbody>
+            </table>
+        </div>
+    </div>
 
-<div class="section-title">Paid Fee Details</div>
-<div class="profile">
-<table width="100%" border="1" id="feeTable"></table>
-</div>
+    <div id="view-result" style="display:none">
+        <button class="back-btn" onclick="showView('view-dashboard')">← Back</button>
+        <div class="profile" style="text-align:center;"><h3>No result to show now</h3></div>
+    </div>
 
-<div class="section-title">Fee Structure</div>
-<div class="profile">
-<div class="info"><span class="label">Monthly Tuition Fees :</span> <span id="monthlyTuition"></span></div>
-<div class="info"><span class="label">Tuition Months :</span> <span id="tuitionMonths"></span></div>
-<div class="info"><span class="label">Transport Fees :</span> <span id="transportFees"></span></div>
-<div class="info"><span class="label">Transport Months :</span> <span id="transportMonths"></span></div>
-<div class="info"><span class="label">Exam Fee :</span> <span id="examFee"></span></div>
-<div class="info"><span class="label">Previous Remain :</span> <span id="prevRemain"></span></div>
-<div class="info"><span class="label">Discount :</span> <span id="discount"></span></div>
-</div>
-
-<div class="section-title">Fee Summary</div>
-<div class="profile">
-<div class="info"><span class="label">Total Paid :</span> <span id="totalPaid"></span></div>
-<div class="info"><span class="label">Balance :</span> <span id="feeBalance"></span></div>
-</div>
-
-</div>
-
-<!-- ATTENDANCE -->
-<div id="attendancePage" style="display:none">
-<button class="back-btn" onclick="goBack()">⬅ Back</button>
-<div class="profile">Nothing to show</div>
-</div>
-
-<!-- DATE SHEET -->
-<div id="dsPage" style="display:none">
-<button class="back-btn" onclick="goBack()">⬅ Back</button>
-<div id="dsContent" class="profile"></div>
-</div>
-
-<!-- RESULT -->
-<div id="resultPage" style="display:none">
-<button class="back-btn" onclick="goBack()">⬅ Back</button>
-<div class="profile">No result to show now</div>
 </div>
 
 <script src="script.js"></script>
-
 </body>
 </html>
