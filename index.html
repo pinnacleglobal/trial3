@@ -9,50 +9,38 @@
         body{ font-family:Arial; margin:0; background:#f2f5ff; }
         .header{ background:#0b3d91; text-align:center; padding:20px; color:white; position: relative; }
         .logo{ width:140px; margin-bottom:10px; filter: drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 12px rgba(255,255,255,0.6)); }
-        
-        /* Notification Bell */
         .notif-bell { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; color: #d4af37; }
-
         .login-box{ text-align:center; padding:30px; }
         input, select{ padding:12px; width:230px; font-size:16px; border:1px solid #ccc; border-radius:4px; }
         button{ padding:12px 25px; font-size:16px; background:#0b3d91; color:white; border:none; border-radius:4px; cursor:pointer; }
-        
-        /* Dashboard Grid */
         .nav-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
         .nav-btn { background: white; padding: 25px 10px; border-radius: 12px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1); font-weight: bold; color: #0b3d91; cursor: pointer; }
         .nav-btn i { font-size: 28px; display: block; margin-bottom: 8px; color: #d4af37; }
         .nav-btn.frozen { opacity: 0.5; cursor: not-allowed; background: #eee; }
-
         .section-title{ background:#d4af37; color:black; padding:12px; margin:15px; border-radius:6px; font-size:18px; font-weight:bold; text-align:center; }
         .profile{ text-align:left; background:white; margin:15px; padding:20px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
         .info{ font-size:15px; margin:8px 0; }
         .label{ font-weight:bold; }
-
         .table-container{ margin:15px; overflow-x: auto; }
         table{ width:100%; border-collapse:collapse; background:white; }
         th,td{ border:1px solid #ddd; padding:10px; text-align:center; font-size:14px; }
         th{ background:#0b3d91; color:white; }
         tr:nth-child(even){ background:#e8f1ff; }
-
         .fee-cards{ display:none; padding:15px; }
         .fee-card{ border-radius:12px; padding:16px; margin-bottom:15px; box-shadow:0 2px 8px rgba(0,0,0,0.12); background: white; }
         @media(max-width:600px){ .table-container{display:none;} .fee-cards{display:block;} }
-
         .loader{ display:none; text-align:center; padding:30px; }
         .spinner{ border:6px solid #eee; border-top:6px solid #0b3d91; border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:auto; }
         @keyframes spin{ 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
-
         .back-btn { margin: 15px; background: #666; }
         .pay-btn{ background:#28a745; color:white; border:none; padding:12px 25px; border-radius:4px; cursor:pointer; font-size:16px; margin-top:10px; }
         .whatsapp-btn{ background:#25D366 !important; color:white !important; font-size:14px !important; padding:8px 12px !important; border-radius:6px !important; border:none; margin-top:5px; display:inline-block; text-align:center; cursor:pointer; width:fit-content; }
-        
         .mobile-only { display: none; }
         @media(max-width:600px){ .mobile-only { display: block; } }
-        .instructions { display: none; }
-        @media(max-width:600px){ .instructions { display: block; margin-top: 15px; font-size: 14px; background: #fff3cd; padding: 12px; border-radius: 6px; } }
+        .instructions { display: block; margin-top: 15px; font-size: 14px; background: #fff3cd; padding: 12px; border-radius: 6px; }
+        .ds-type-header { background: #0b3d91; color: white; padding: 5px; font-weight: bold; text-align: left; padding-left: 10px; }
     </style>
 </head>
-
 <body>
 
 <div class="header">
@@ -73,14 +61,11 @@
 </div>
 
 <div id="portal" style="display:none">
-
     <div id="view-dashboard">
         <div class="profile" style="text-align:center; background:#0b3d91; color:white; padding: 25px 20px;">
             <h2 id="welcomeName" style="margin: 0;"></h2>
-            <img id="studentPhoto" src="" alt="Student Photo" 
-                 style="display:none; width:130px; height:130px; border-radius:50%; border:4px solid #ffffff; object-fit:cover; object-position: center 10%; box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-top: 20px;">
+            <img id="studentPhoto" src="" style="display:none; width:130px; height:130px; border-radius:50%; border:4px solid #ffffff; object-fit:cover; object-position: center 10%; box-shadow: 0 4px 10px rgba(0,0,0,0.3); margin-top: 20px;">
         </div>
-
         <div class="section-title">Student Details</div>
         <div class="profile">
             <div class="info"><span class="label">Student Name :</span> <span id="studentName"></span></div>
@@ -91,7 +76,6 @@
             <div class="info"><span class="label">Phone Number :</span> <span id="phone"></span></div>
             <div class="info"><span class="label">Address :</span> <span id="address"></span></div>
         </div>
-
         <div class="nav-grid">
             <div class="nav-btn" onclick="showView('view-fees')"><i class="fas fa-file-invoice-dollar"></i>Fees</div>
             <div class="nav-btn" onclick="showView('view-attendance')"><i class="fas fa-calendar-check"></i>Attendance</div>
@@ -103,7 +87,6 @@
 
     <div id="view-fees" style="display:none">
         <button class="back-btn" onclick="showView('view-dashboard')">← Back to Dashboard</button>
-        
         <div class="section-title">Paid Fee Details</div>
         <div class="table-container">
             <table>
@@ -113,8 +96,7 @@
                 <tbody id="feeTable"></tbody>
             </table>
         </div>
-        <div class="fee-cards" id="feeCards"></div>
-
+        <div id="feeCards" class="fee-cards"></div>
         <div class="section-title">Fee Structure</div>
         <div class="profile">
             <div class="info"><span class="label">Monthly Tuition Fees :</span> <span id="monthlyTuition"></span></div>
@@ -125,16 +107,17 @@
             <div class="info"><span class="label">Previous Year Fee Remain :</span> <span id="prevRemain"></span></div>
             <div class="info"><span class="label">Discount :</span> <span id="discount"></span></div>
         </div>
-
         <div class="section-title">Fee Summary</div>
         <div class="profile">
             <div class="info"><span class="label">Total Fees Paid in Current Session :</span> <span id="totalPaid"></span></div>
             <div class="info"><span class="label">Fee Balance :</span> <span id="feeBalance"></span></div>
             <div class="info"><button id="payBalanceBtn" class="pay-btn mobile-only">Pay Now</button></div>
             <div class="info"><button id="sendScreenshotBalanceBtn" class="whatsapp-btn mobile-only">Send Payment Screenshot to WhatsApp</button></div>
-            <div class="instructions"><b>Important Instructions:</b><br>1. Please share the screenshot of the payment with the school...</div>
+            <div class="instructions">
+                <b>Important Instructions:</b><br>1. Please share the screenshot of the payment with the school, then only the receipt slip will be made.<br>2. Please do not share login code with anyone.<br><br>
+                <b>महत्वपूर्ण निर्देश:</b><br>1. कृपया भुगतान का स्क्रीनशॉट स्कूल के साथ साझा करें, तभी रसीद जारी की जाएगी।<br>2. कृपया लॉगिन कोड किसी के साथ साझा न करें।
+            </div>
         </div>
-
         <div class="section-title">Calculate Fees</div>
         <div class="profile">
             <div class="info"><label class="label">Choose Monthly Tuition Fee Months :</label><select id="calcTuitionMonths"></select></div>
@@ -143,6 +126,21 @@
             <div class="info"><label class="label">Fees to be Paid :</label><span id="calcTotal">₹0</span></div>
             <div class="info"><button id="payNowBtn" class="pay-btn mobile-only">Pay Now</button></div>
             <div class="info"><button id="sendScreenshotCalcBtn" class="whatsapp-btn mobile-only">Send Payment Screenshot to WhatsApp</button></div>
+            <div class="instructions">
+                <b>Important Instructions:</b><br>1. Please share the screenshot of the payment with the school, then only the receipt slip will be made.<br>2. Please do not share login code with anyone.<br><br>
+                <b>महत्वपूर्ण निर्देश:</b><br>1. कृपया भुगतान का स्क्रीनशॉट स्कूल के साथ साझा करें, तभी रसीद जारी की जाएगी।<br>2. कृपया लॉगिन कोड किसी के साथ साझा न करें।
+            </div>
+        </div>
+    </div>
+
+    <div id="view-datesheet" style="display:none">
+        <button class="back-btn" onclick="showView('view-dashboard')">← Back</button>
+        <div class="section-title" id="ds-title">Date Sheet</div>
+        <div class="table-container" style="display:block">
+            <table>
+                <thead><tr><th>Date</th><th>Subject</th></tr></thead>
+                <tbody id="dsBody"></tbody>
+            </table>
         </div>
     </div>
 
@@ -150,22 +148,10 @@
         <button class="back-btn" onclick="showView('view-dashboard')">← Back</button>
         <div class="profile" style="text-align:center;"><h3>Nothing to show</h3></div>
     </div>
-
-    <div id="view-datesheet" style="display:none">
-        <button class="back-btn" onclick="showView('view-dashboard')">← Back</button>
-        <div class="section-title" id="ds-title">Date Sheet</div>
-        <div class="table-container" style="display:block"> <table>
-                <thead><tr><th>Date</th><th>Subject</th></tr></thead>
-                <tbody id="dsBody"></tbody>
-            </table>
-        </div>
-    </div>
-
     <div id="view-result" style="display:none">
         <button class="back-btn" onclick="showView('view-dashboard')">← Back</button>
         <div class="profile" style="text-align:center;"><h3>No result to show now</h3></div>
     </div>
-
 </div>
 
 <script src="script.js"></script>
