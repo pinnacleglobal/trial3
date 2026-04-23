@@ -1,118 +1,159 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>Student Fee Portal | Pinnacle Global School</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        :root { --primary: #1a237e; --secondary: #ffd700; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f9; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 400px; text-align: center; }
-        .logo { max-width: 120px; margin-bottom: 1rem; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        #dashboard { display: none; max-width: 600px; }
-        .profile-card { display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        .student-photo { width: 150px; height: 150px; border-radius: 50%; border: 4px solid var(--secondary); object-fit: cover; }
-        .details-grid { text-align: left; width: 100%; margin-top: 20px; }
-        .detail-item { margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        .label { font-weight: bold; color: #555; font-size: 0.9rem; }
-    </style>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Student Portal</title>
+
+<style>
+body{
+font-family:Arial;
+margin:0;
+background:#f2f5ff;
+}
+
+/* HEADER */
+.header{
+background:#0b3d91;
+text-align:center;
+padding:20px;
+color:white;
+position:relative;
+}
+
+.bell{
+position:absolute;
+right:20px;
+top:20px;
+font-size:22px;
+cursor:pointer;
+}
+
+/* DASHBOARD BUTTONS */
+.dashboard{
+padding:20px;
+text-align:center;
+}
+
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:15px;
+}
+
+.grid button{
+padding:20px;
+font-size:18px;
+border:none;
+border-radius:10px;
+background:#0b3d91;
+color:white;
+cursor:pointer;
+}
+
+.grid button.disabled{
+background:gray;
+cursor:not-allowed;
+}
+
+/* COMMON */
+.section-title{
+background:#d4af37;
+padding:12px;
+margin:15px;
+border-radius:6px;
+text-align:center;
+font-weight:bold;
+}
+
+.profile{
+background:white;
+margin:15px;
+padding:20px;
+border-radius:10px;
+}
+
+/* BACK BUTTON */
+.back-btn{
+margin:15px;
+padding:10px 20px;
+background:#0b3d91;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+</style>
 </head>
+
 <body>
 
-    <div id="loginPage" class="container">
-        <img src="https://via.placeholder.com/150?text=School+Logo" alt="School Logo" class="logo">
-        <h2>Student Portal</h2>
-        <input type="text" id="loginCode" placeholder="Enter Login Code">
-        <button onclick="login()">Login</button>
-        <p id="msg" style="color: red;"></p>
-    </div>
+<div class="header">
+<h2>Student Portal</h2>
+<div class="bell" onclick="openNotification()">🔔</div>
+</div>
 
-    <div id="dashboard" class="container">
-        <img src="https://via.placeholder.com/150?text=School+Logo" alt="School Logo" class="logo" style="max-width: 80px;">
-        <div class="profile-card">
-            <img id="stPhoto" class="student-photo" src="" alt="Student Photo">
-            <h2 id="stName"></h2>
-        </div>
-        <div class="details-grid">
-            <div class="detail-item"><div class="label">Admission No:</div> <span id="stAdm"></span></div>
-            <div class="detail-item"><div class="label">Father's Name:</div> <span id="stFather"></span></div>
-            <div class="detail-item"><div class="label">Mother's Name:</div> <span id="stMother"></span></div>
-            <div class="detail-item"><div class="label">Date of Birth:</div> <span id="stDob"></span></div>
-            <div class="detail-item"><div class="label">Address:</div> <span id="stAddress"></span></div>
-        </div>
-        <button onclick="location.reload()" style="margin-top:20px; background:#666;">Logout</button>
-    </div>
+<!-- LOGIN -->
+<div id="loginBox" style="text-align:center;padding:30px;">
+<input id="loginCode" placeholder="Enter Login Code"><br><br>
+<button onclick="login()">Login</button>
+</div>
 
-    <script>
-     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtlKG5GVmefAR0_iHV6INCMCod8wKi1ki-PrnTnTGXm7gQn_IRZJOf5BkMlKzLCdks/exec";
+<div id="loader" style="display:none;text-align:center;">Loading...</div>
 
-function login() {
-    const code = document.getElementById('loginCode').value;
-    const msg = document.getElementById('msg');
-    msg.innerText = "Authenticating...";
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none">
 
-    // Remove any old script tags from previous attempts
-    const oldScript = document.getElementById('jsonp-request');
-    if (oldScript) oldScript.remove();
+<div class="profile" style="text-align:center;">
+<h2 id="welcomeName"></h2>
+</div>
 
-    // Create a dynamic script tag (the JSONP trick)
-    const script = document.createElement('script');
-    script.id = 'jsonp-request';
-    script.src = `${SCRIPT_URL}?code=${code}&callback=handleResponse`;
-    
-    // If the script fails to load, show error
-    script.onerror = () => { msg.innerText = "Connection error. Check URL or Permissions."; };
-    
-    document.body.appendChild(script);
-}
+<div class="section-title">Student Details</div>
 
-// This function handles the data once it comes back from Google
-function handleResponse(data) {
-    const msg = document.getElementById('msg');
-    if (data) {
-        showDashboard(data);
-    } else {
-        msg.innerText = "Invalid Login Code. Please try again.";
-    }
-}
+<div class="profile">
+<div>Name: <span id="studentName"></span></div>
+<div>Class: <span id="class"></span></div>
+<div>Admission: <span id="adm"></span></div>
+</div>
 
-function showDashboard(data) {
-    document.getElementById('loginPage').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    
-    document.getElementById('stName').innerText = data.name;
-    document.getElementById('stAdm').innerText = data.admissionNo;
-    document.getElementById('stFather').innerText = data.father;
-    document.getElementById('stMother').innerText = data.mother;
-    document.getElementById('stAddress').innerText = data.address;
-    
-    // Formatting the date
-    if (data.dob) {
-        const d = new Date(data.dob);
-        document.getElementById('stDob').innerText = d.toLocaleDateString();
-    }
-    
-    // --- PHOTO FIX START ---
-    let photoUrl = data.photo;
+<div class="dashboard">
+<div class="grid">
+<button onclick="openFees()">Fees</button>
+<button id="attendanceBtn" onclick="openAttendance()">Attendance</button>
+<button id="dsBtn" onclick="openDateSheet()">Date Sheet</button>
+<button id="resultBtn" onclick="openResult()">Result</button>
+</div>
+</div>
 
-    if (photoUrl && photoUrl.includes("drive.google.com")) {
-        // Extract the ID from the link and convert to direct download URL
-        const fileId = photoUrl.match(/[-\w]{25,}/); 
-        if (fileId) {
-            photoUrl = `https://lh3.googleusercontent.com/u/0/d/${fileId}`;
-        }
-    }
+</div>
 
-    const stPhoto = document.getElementById('stPhoto');
-    stPhoto.src = photoUrl || "https://via.placeholder.com/150?text=No+Photo";
-    
-    // Error handling if the link is broken or restricted
-    stPhoto.onerror = function() {
-        this.src = "https://via.placeholder.com/150?text=Check+Permissions";
-    };
-    // --- PHOTO FIX END ---
-}
-    </script>
+<!-- FEES PAGE -->
+<div id="feesPage" style="display:none">
+<button class="back-btn" onclick="goBack()">⬅ Back</button>
+
+<div class="section-title">Fees Section</div>
+<div class="profile">Same Fee UI will remain here (use your existing code)</div>
+</div>
+
+<!-- ATTENDANCE -->
+<div id="attendancePage" style="display:none">
+<button class="back-btn" onclick="goBack()">⬅ Back</button>
+<div class="profile">Nothing to show</div>
+</div>
+
+<!-- DATE SHEET -->
+<div id="dsPage" style="display:none">
+<button class="back-btn" onclick="goBack()">⬅ Back</button>
+<div id="dsContent" class="profile"></div>
+</div>
+
+<!-- RESULT -->
+<div id="resultPage" style="display:none">
+<button class="back-btn" onclick="goBack()">⬅ Back</button>
+<div class="profile">No result to show now</div>
+</div>
+
+<script src="script.js"></script>
+
 </body>
 </html>
