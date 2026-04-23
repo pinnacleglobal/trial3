@@ -12,27 +12,17 @@ let globalNotification = "No notification to show";
 async function login() {
     const code = document.getElementById("loginCode").value.trim();
     if (!code) { alert("Enter Login Code"); return; }
-
     document.getElementById("loginBtn").disabled = true;
     document.getElementById("loader").style.display = "block";
 
     try {
-        // 1. Fetch AW Data
         let awResp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${awSheet}?key=${apiKey}`);
         let awRows = (await awResp.json()).values || [];
-        
-        let student = null;
-        for (let i = 1; i < awRows.length; i++) {
-            if (awRows[i][29] && awRows[i][29].trim() == code) {
-                student = awRows[i];
-                break;
-            }
-        }
+        let student = findInRows(awRows, 29, code);
 
         if (!student) { alert("Invalid Login Code"); location.reload(); return; }
         if (student[31]?.toUpperCase() === "TRUE") { alert("Login Blocked."); location.reload(); return; }
 
-        // 2. Fetch Master and DS Data
         let [masterResp, dsResp] = await Promise.all([
             fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${masterSheet}?key=${apiKey}`),
             fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${dsSheet}?key=${apiKey}`)
@@ -40,13 +30,8 @@ async function login() {
 
         let masterRows = (await masterResp.json()).values || [];
         let dsRows = (await dsResp.json()).values || [];
-        
-        let mData = null;
-        for (let i = 1; i < masterRows.length; i++) {
-            if (masterRows[i][1] == student[1]) { mData = masterRows[i]; break; }
-        }
+        let mData = findInRows(masterRows, 1, student[1]);
 
-        // 3. Populate All UI
         handlePermissions(dsRows);
         populateStudentProfile(student, mData);
         await handleFees(student[1], mData);
@@ -56,7 +41,6 @@ async function login() {
         document.getElementById("loader").style.display = "none";
         document.getElementById("portal").style.display = "block";
         document.getElementById("notifIcon").style.display = "block";
-
         setupSendScreenshotButtons();
 
     } catch (e) {
@@ -67,10 +51,17 @@ async function login() {
     }
 }
 
+function findInRows(rows, colIdx, value) {
+    for (let i = 1; i < rows.length; i++) {
+        if (rows[i][colIdx] && rows[i][colIdx].trim() == value) return rows[i];
+    }
+    return null;
+}
+
 function handlePermissions(rows) {
-    const dsStatus = rows[13] ? rows[13][10] : ""; // K14
-    const resStatus = rows[15] ? rows[15][10] : ""; // K16
-    const notifStatus = rows[19] ? rows[19][10] : ""; // K20
+    const dsStatus = rows[13] ? rows[13][10] : ""; 
+    const resStatus = rows[15] ? rows[15][10] : ""; 
+    const notifStatus = rows[19] ? rows[19][10] : ""; 
     
     if (dsStatus === "Publish") {
         let b = document.getElementById("btn-datesheet");
@@ -83,8 +74,34 @@ function handlePermissions(rows) {
         b.onclick = () => showView('view-result');
     }
     if (notifStatus === "Publish") {
-        globalNotification = rows[20] ? rows[20][9] : "No notification to show"; // J21
+        globalNotification = rows[20] ? rows[20][9] : "No notification to show"; 
     }
+}
+
+function setupDateSheet(rows, studentClass) {
+    const examType = rows[0] ? rows[0][1] : ""; 
+    document.getElementById("ds-title").innerText = "Date Sheet: " + examType;
+    
+    let classCol = -1;
+    const headerRow = rows[1]; 
+    for(let j=1; j<=15; j++) { if(headerRow[j] == studentClass) { classCol = j; break; } }
+
+    let html = "";
+    const isMajorExam = examType.includes("Half Yearly") || examType.includes("Annual");
+
+    if(classCol !== -1) {
+        if(isMajorExam) {
+            html += `<tr class="ds-type-header"><td colspan="2">Minor Exams</td></tr>`;
+            [3, 4].forEach(idx => {
+                if(rows[idx] && rows[idx][0]) html += `<tr><td>${rows[idx][0]}</td><td>${rows[idx][classCol] || '-'}</td></tr>`;
+            });
+            html += `<tr class="ds-type-header"><td colspan="2">Major Exams</td></tr>`;
+        }
+        [6, 7, 8, 9, 10, 11].forEach(idx => {
+            if(rows[idx] && rows[idx][0]) html += `<tr><td>${rows[idx][0]}</td><td>${rows[idx][classCol] || '-'}</td></tr>`;
+        });
+    }
+    document.getElementById("dsBody").innerHTML = html || "<tr><td colspan='2'>Nothing to show</td></tr>";
 }
 
 function populateStudentProfile(aw, master) {
@@ -97,17 +114,14 @@ function populateStudentProfile(aw, master) {
     document.getElementById("phone").innerText = aw[22];
     document.getElementById("address").innerText = aw[7];
     
-    // Photo Logic
     if (aw[28]) {
         let fileId = "";
         if (aw[28].includes("id=")) fileId = aw[28].split("id=")[1].split("&")[0];
         else if (aw[28].includes("/d/")) fileId = aw[28].split("/d/")[1].split("/")[0];
-        
         if (fileId) {
             const img = document.getElementById("studentPhoto");
-            img.src = `https://lh3.googleusercontent.com/u/0/d/$${fileId}`;
+            img.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w500`;
             img.style.display = "inline-block";
-            img.onerror = function() { this.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w500`; };
         }
     }
 }
@@ -115,7 +129,6 @@ function populateStudentProfile(aw, master) {
 async function handleFees(adm, mData) {
     let resp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${feesSheet}?key=${apiKey}`);
     let rows = (await resp.json()).values || [];
-    
     let monthlyTuition = parseFloat(mData[4]) || 0;
     let prevRemain = parseFloat(mData[3]) || 0;
     let discount = parseFloat(mData[5]) || 0;
@@ -131,9 +144,8 @@ async function handleFees(adm, mData) {
         if (r[2] == adm) {
             let amt = parseFloat(r[5]) || 0;
             if (r[7] == "2026-27" && r[6]?.toLowerCase() == "monthly fees") totalPaid += amt;
-            let row = `<tr><td>${r[1]}</td><td>${r[0]}</td><td>₹${amt}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[8]}</td><td>${r[9]}</td><td>${r[10]}</td><td>${r[11]}</td></tr>`;
-            tableHtml += row;
-            cardsHtml += `<div class="fee-card"><div><b>Date:</b> ${r[1]}</div><div><b>Amount:</b> ₹${amt}</div><div><b>Type:</b> ${r[6]}</div></div>`;
+            tableHtml += `<tr><td>${r[1]}</td><td>${r[0]}</td><td>₹${amt}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[8]}</td><td>${r[9]}</td><td>${r[10]}</td><td>${r[11]}</td></tr>`;
+            cardsHtml += `<div class="fee-card"><div><b>Date:</b> ${r[1]}</div><div><b>Slip:</b> ${r[0]}</div><div><b>Amount:</b> ₹${amt}</div></div>`;
         }
     }
 
@@ -142,8 +154,6 @@ async function handleFees(adm, mData) {
 
     document.getElementById("feeTable").innerHTML = tableHtml;
     document.getElementById("feeCards").innerHTML = cardsHtml;
-    
-    // Structure
     document.getElementById("monthlyTuition").innerText = "₹" + monthlyTuition;
     document.getElementById("tuitionMonths").innerText = tuitionMonths;
     document.getElementById("transportFees").innerText = "₹" + transportFees;
@@ -151,8 +161,6 @@ async function handleFees(adm, mData) {
     document.getElementById("examFee").innerText = "₹" + examFee;
     document.getElementById("prevRemain").innerText = "₹" + prevRemain;
     document.getElementById("discount").innerText = "₹" + Math.round(discount);
-
-    // Summary
     document.getElementById("totalPaid").innerText = "₹" + totalPaid;
     let balEl = document.getElementById("feeBalance");
     balEl.innerText = "₹" + balance;
@@ -160,23 +168,6 @@ async function handleFees(adm, mData) {
 
     populateFeeSelectors(examFee, monthlyTuition, transportFees);
     setupPaymentLink(balance, "payBalanceBtn");
-}
-
-function setupDateSheet(rows, studentClass) {
-    const examType = rows[0] ? rows[0][1] : ""; // B1
-    document.getElementById("ds-title").innerText = "Date Sheet: " + examType;
-    
-    let classCol = -1;
-    const headerRow = rows[1]; // Row 2
-    for(let j=1; j<=15; j++) { if(headerRow[j] == studentClass) { classCol = j; break; } }
-
-    let html = "";
-    if(classCol !== -1) {
-        const addRow = (idx) => { if(rows[idx] && rows[idx][0]) html += `<tr><td>${rows[idx][0]}</td><td>${rows[idx][classCol] || '-'}</td></tr>`; };
-        if(examType.includes("Half Yearly") || examType.includes("Annual")) { [3, 4].forEach(addRow); }
-        [6, 7, 8, 9, 10, 11].forEach(addRow);
-    }
-    document.getElementById("dsBody").innerHTML = html || "<tr><td colspan='2'>Nothing to show</td></tr>";
 }
 
 function populateFeeSelectors(exFee, monthly, transport) {
@@ -187,7 +178,6 @@ function populateFeeSelectors(exFee, monthly, transport) {
     for(let i=0; i<=12; i++) t.innerHTML += `<option value="${i}">${i}</option>`;
     for(let i=0; i<=11; i++) tr.innerHTML += `<option value="${i}">${i}</option>`;
     for(let i=0; i<=2; i++) ex.innerHTML += `<option value="${i}">${i}</option>`;
-
     const updateCalc = () => {
         let total = (t.value * (monthly - originalDiscount)) + (tr.value * transport) + (ex.value * (exFee/2));
         document.getElementById("calcTotal").innerText = "₹" + Math.round(total);
@@ -199,10 +189,7 @@ function populateFeeSelectors(exFee, monthly, transport) {
 function setupPaymentLink(amount, btnId) {
     document.getElementById(btnId).onclick = () => {
         if (amount <= 0) { alert("Amount must be greater than 0"); return; }
-        const adm = document.getElementById("adm").innerText;
-        const name = document.getElementById("studentName").innerText;
-        const cls = document.getElementById("class").innerText;
-        const note = encodeURIComponent(`${adm} ${name} ${cls} FEE`);
+        const note = encodeURIComponent(`${document.getElementById("adm").innerText} ${document.getElementById("studentName").innerText} FEE`);
         window.location.href = `upi://pay?pa=pinnacleglobalschool.62697340@hdfcbank&pn=Pinnacle Global School&am=${amount}&cu=INR&tn=${note}`;
     };
 }
