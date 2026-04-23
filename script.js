@@ -139,56 +139,59 @@ async function handleFees(adm, mData) {
     let transportMonths = parseFloat(mData[8]) || 0;
     let examFee = parseFloat(mData[9]) || 1000;
 
-    let tableHtml = "", cardsHtml = "", totalPaid = 0;
-    
-    // Filter rows for this student
-    const studentFees = rows.slice(1).filter(r => r[2] == adm);
+    let tableHtml = "";
+    let cardsHtml = "";
+    let totalPaid = 0;
 
-    studentFees.forEach((r, index) => {
-        let date = r[1] || "";
-        let slip = r[0] || "";
-        let amount = parseFloat(r[5]) || 0;
-        let feeType = r[6] || "";
-        let session = r[7] || "";
-        let tMonths = r[8] || "";
-        let trMonths = r[9] || "";
-        let exMonths = r[10] || "";
-        let mode = r[11] || "";
+    // Loop through all fee records
+    for (let i = 1; i < rows.length; i++) {
+        let r = rows[i];
+        if (r[2] == adm) {
+            let date = r[1] || "";
+            let slip = r[0] || "";
+            let amount = parseFloat(r[5]) || 0;
+            let feeType = r[6] || "";
+            let session = r[7] || "";
+            let tMonths = r[8] || "";
+            let trMonths = r[9] || "";
+            let exMonths = r[10] || "";
+            let mode = r[11] || "";
 
-        if (session == "2026-27" && feeType.toLowerCase() == "monthly fees") {
-            totalPaid += amount;
+            if (session == "2026-27" && feeType.toLowerCase() == "monthly fees") {
+                totalPaid += amount;
+            }
+
+            // Desktop Table Rows
+            tableHtml += `<tr>
+                <td>${date}</td><td>${slip}</td><td>₹${amount}</td>
+                <td>${feeType}</td><td>${session}</td><td>${tMonths}</td>
+                <td>${trMonths}</td><td>${exMonths}</td><td>${mode}</td>
+            </tr>`;
+
+            // Mobile Cards (This sequence allows nth-child(even) to work)
+            cardsHtml += `
+            <div class="fee-card">
+                <div><b>Date:</b> ${date}</div>
+                <div><b>Slip Number:</b> ${slip}</div>
+                <div><b>Amount Paid:</b> ₹${amount}</div>
+                <div><b>Fee Type:</b> ${feeType}</div>
+                <div><b>Session:</b> ${session}</div>
+                <div><b>Tuition Fee Months:</b> ${tMonths}</div>
+                <div><b>Transport Fee Months:</b> ${trMonths}</div>
+                <div><b>Exam Fee Months:</b> ${exMonths}</div>
+                <div><b>Payment Mode:</b> ${mode}</div>
+            </div>`;
         }
+    }
 
-        // Table Row (Desktop)
-        tableHtml += `<tr>
-            <td>${date}</td><td>${slip}</td><td>₹${amount}</td>
-            <td>${feeType}</td><td>${session}</td><td>${tMonths}</td>
-            <td>${trMonths}</td><td>${exMonths}</td><td>${mode}</td>
-        </tr>`;
-
-        // Card (Mobile) - Re-adding all fields and alternating logic
-        cardsHtml += `
-        <div class="fee-card">
-            <div><b>Date:</b> ${date}</div>
-            <div><b>Slip Number:</b> ${slip}</div>
-            <div><b>Amount Paid:</b> ₹${amount}</div>
-            <div><b>Fee Type:</b> ${feeType}</div>
-            <div><b>Session:</b> ${session}</div>
-            <div><b>Tuition Fee Months:</b> ${tMonths}</div>
-            <div><b>Transport Fee Months:</b> ${trMonths}</div>
-            <div><b>Exam Fee Months:</b> ${exMonths}</div>
-            <div><b>Payment Mode:</b> ${mode}</div>
-        </div>`;
-    });
-
+    // Final Calculation
     let totalFee = ((monthlyTuition - discount) * tuitionMonths) + (transportFees * transportMonths) + examFee + prevRemain;
     let balance = Math.round(totalFee - totalPaid);
 
-    // Update the DOM
+    // Populate the UI
     document.getElementById("feeTable").innerHTML = tableHtml;
     document.getElementById("feeCards").innerHTML = cardsHtml;
     
-    // Update Structure and Summary
     document.getElementById("monthlyTuition").innerText = "₹" + monthlyTuition;
     document.getElementById("tuitionMonths").innerText = tuitionMonths;
     document.getElementById("transportFees").innerText = "₹" + transportFees;
