@@ -135,7 +135,7 @@ let resp = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetID}
 let data = (await resp.json()).values;
 
 let status = data[19][10];
-let msg = data[1][9];
+let msg = data[20][9];
 
 if(status=="Publish"){
 alert(msg);
