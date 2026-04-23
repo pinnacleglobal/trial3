@@ -9,51 +9,49 @@
         body{ font-family:Arial, sans-serif; margin:0; background:#f2f5ff; color: #333; }
         .header{ background:#0b3d91; text-align:center; padding:20px; color:white; position: relative; }
         .logo{ width:140px; margin-bottom:10px; filter: drop-shadow(0 0 6px rgba(255,255,255,0.9)); }
-        .notif-bell { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; color: #d4af37; }
         
-        /* Photo Placement (Restored) */
-        .photo-container { text-align: center; margin-bottom: 20px; }
-        #studentPhoto { width:130px; height:130px; border-radius:50%; border:4px solid #ffffff; object-fit:cover; box-shadow: 0 4px 15px rgba(0,0,0,0.4); display: none; margin: 0 auto; }
-
+        /* Icons & Buttons */
+        .notif-bell { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; color: #d4af37; }
         .login-box{ text-align:center; padding:30px; margin-top: 50px; }
         input, select{ padding:12px; width:230px; font-size:16px; border:1px solid #ccc; border-radius:4px; margin: 5px 0; }
         button{ padding:12px 25px; font-size:16px; background:#0b3d91; color:white; border:none; border-radius:4px; cursor:pointer; }
         
+        /* Dashboard Layout */
         .nav-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
         .nav-btn { background: white; padding: 25px 10px; border-radius: 12px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1); font-weight: bold; color: #0b3d91; cursor: pointer; border: none; }
         .nav-btn i { font-size: 28px; display: block; margin-bottom: 8px; color: #d4af37; }
+        .nav-btn.frozen { opacity: 0.5; cursor: not-allowed; background: #eee; }
 
+        /* Content Blocks */
         .section-title{ background:#d4af37; color:black; padding:12px; margin:15px; border-radius:6px; font-size:18px; font-weight:bold; text-align:center; }
         .profile{ text-align:left; background:white; margin:15px; padding:20px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
-        .info{ font-size:15px; margin:10px 0; }
+        .info{ font-size:15px; margin:10px 0; display: block; }
         .label{ font-weight:bold; color: #0b3d91; }
 
-        /* Tables Formatting */
+        /* Tables & Mobile Cards */
         .table-container{ margin:15px; overflow-x: auto; background: white; border-radius: 8px; }
-        table{ width:100%; border-collapse:collapse; table-layout: auto; }
-        th,td{ border:1px solid #ddd; padding:10px; text-align:center; font-size:14px; }
+        table{ width:100%; border-collapse:collapse; }
+        th,td{ border:1px solid #ddd; padding:12px; text-align:center; font-size:14px; }
         th{ background:#0b3d91; color:white; }
-        tr:nth-child(even){ background:#e8f1ff; } /* Alternating rows for all tables */
         
-        /* Fix Date Column Width */
-        .date-col { width: 100px !important; }
-
-        /* Fee Cards Styling (Restored Bold Blue Labels) */
         .fee-cards{ display:none; padding:15px; }
         .fee-card{ border-radius:12px; padding:16px; margin-bottom:15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); background: white; border: 1px solid #eee; }
         .fee-card:nth-child(even) { background: #e8f1ff !important; }
-        .card-label { font-weight: bold; color: #0b3d91; }
-
-        @media(max-width:600px){ .table-container{display:none;} .fee-cards{display:block;} .view-table-mobile{ display: block !important; } }
-        .view-table-mobile { display: none; } /* For Date Sheet to stay as table on mobile */
-
-        .instructions { font-size: 14px; background: #fff3cd; padding: 15px; border-radius: 6px; margin-top: 15px; border: 1px solid #ffeeba; line-height: 1.6; }
-        .pay-btn{ background:#28a745; color:white; border:none; padding:12px 25px; border-radius:4px; cursor:pointer; font-size:16px; width: 100%; margin-top: 10px; font-weight: bold; }
-        .whatsapp-btn{ background:#25D366; color:white; padding:10px; border-radius:6px; border:none; margin-top:10px; width: 100%; cursor:pointer; display: block; text-align: center; font-weight: bold; text-decoration: none; }
         
+        @media(max-width:600px){ .table-container{display:none;} .fee-cards{display:block;} }
+
+        /* Status Elements */
         .loader{ display:none; text-align:center; padding:30px; }
-        .spinner{ border:6px solid #f3f3f3; border-top:6px solid #0b3d91; border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:auto; }
+        .spinner{ border:6px solid #f3f3f3; border-top:6px solid #d4af37; border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:auto; }
         @keyframes spin{ 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
+
+        /* Back & Utility Buttons */
+        .back-btn { margin: 15px; background: #555; color: white; padding: 10px 15px; border-radius: 5px; cursor: pointer; border: none; }
+        .pay-btn{ background:#28a745; color:white; border:none; padding:12px 25px; border-radius:4px; cursor:pointer; font-size:16px; width: 100%; margin-top: 10px; }
+        .whatsapp-btn{ background:#25D366; color:white; font-size:14px; padding:10px; border-radius:6px; border:none; margin-top:10px; width: 100%; cursor:pointer; display: block; text-align: center; font-weight: bold; }
+        .instructions { font-size: 13px; background: #fff3cd; padding: 15px; border-radius: 6px; margin-top: 15px; border: 1px solid #ffeeba; line-height: 1.5; }
+        
+        .ds-type-header { background: #0b3d91; color: white; padding: 8px; font-weight: bold; text-align: center; }
     </style>
 </head>
 <body>
@@ -72,16 +70,16 @@
 </div>
 
 <div class="loader" id="loader">
-    <div class="spinner"></div><br>Loading Data...
+    <div class="spinner"></div><br>
+    <span id="loaderText">Loading Secure Data...</span>
 </div>
 
 <div id="portal" style="display:none">
+
     <div id="view-dashboard">
-        <div class="profile" style="background:#0b3d91; color:white; padding: 25px 20px;">
-            <div class="photo-container">
-                <img id="studentPhoto" src="">
-            </div>
-            <h2 id="welcomeName" style="margin: 0; text-align: center;"></h2>
+        <div class="profile" style="text-align:center; background:#0b3d91; color:white; padding: 30px 20px;">
+            <h2 id="welcomeName" style="margin: 0;"></h2>
+            <img id="studentPhoto" src="" style="display:none; width:130px; height:130px; border-radius:50%; border:4px solid #ffffff; object-fit:cover; margin-top: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.4);">
         </div>
 
         <div class="section-title">Student Details</div>
@@ -101,65 +99,84 @@
             <div id="btn-datesheet" class="nav-btn frozen"><i class="fas fa-calendar-alt"></i>Date-Sheet</div>
             <div id="btn-result" class="nav-btn frozen"><i class="fas fa-poll"></i>Result</div>
         </div>
-        <div style="text-align:center; margin:20px;"><button onclick="location.reload()" style="background:#666;">Logout</button></div>
+        
+        <div style="text-align:center; margin:30px;"><button onclick="location.reload()" style="background:#666;">Logout</button></div>
     </div>
 
     <div id="view-fees" style="display:none">
-        <button class="back-btn" onclick="showView('view-dashboard')" style="background:#555; color:white; border:none; padding:10px; margin:15px; border-radius:5px;">← Back</button>
+        <button class="back-btn" onclick="showView('view-dashboard')">← Back to Dashboard</button>
         
         <div class="section-title">Paid Fee Details</div>
         <div class="table-container">
             <table>
                 <thead>
-                    <tr><th class="date-col">Date</th><th>Slip Number</th><th>Amount Paid</th><th>Fee Type</th><th>Session</th><th>Tuition Fee Months</th><th>Transport Fee Months</th><th>Exam Fee Months</th><th>Payment Mode</th></tr>
+                    <tr><th>Date</th><th>Slip</th><th>Amount</th><th>Type</th><th>Session</th><th>T-Months</th><th>Tr-Months</th><th>Ex-Months</th><th>Mode</th></tr>
                 </thead>
                 <tbody id="feeTable"></tbody>
             </table>
         </div>
         <div id="feeCards" class="fee-cards"></div>
 
+        <div class="section-title">Fee Structure</div>
+        <div class="profile">
+            <div class="info"><span class="label">Monthly Tuition Fees :</span> <span id="monthlyTuition"></span></div>
+            <div class="info"><span class="label">Tuition Fees for Months :</span> <span id="tuitionMonths"></span></div>
+            <div class="info"><span class="label">Transport Fees :</span> <span id="transportFees"></span></div>
+            <div class="info"><span class="label">Transport Fees Months :</span> <span id="transportMonths"></span></div>
+            <div class="info"><span class="label">Exam Fee :</span> <span id="examFee"></span></div>
+            <div class="info"><span class="label">Previous Year Fee Remain :</span> <span id="prevRemain"></span></div>
+            <div class="info"><span class="label">Discount :</span> <span id="discount"></span></div>
+        </div>
+
         <div class="section-title">Fee Summary</div>
         <div class="profile">
-            <div class="info"><span class="label">Total Paid (2026-27) :</span> <span id="totalPaid"></span></div>
+            <div class="info"><span class="label">Total Paid in 2026-27 :</span> <span id="totalPaid"></span></div>
             <div class="info"><span class="label">Fee Balance :</span> <span id="feeBalance" style="font-weight:bold;"></span></div>
             <button id="payBalanceBtn" class="pay-btn">Pay Balance Now</button>
-            <button id="sendScreenshotBalanceBtn" class="whatsapp-btn">Send Screenshot to WhatsApp</button>
+            <button id="sendScreenshotBalanceBtn" class="whatsapp-btn"><i class="fab fa-whatsapp"></i> Send Screenshot to School</button>
             
             <div class="instructions">
-                <b>Important Instructions:</b><br>1. Please share the screenshot of the payment with the school, then only the receipt slip will be made.<br>2. Please do not share login code with anyone.<br><br>
-                <b>महत्वपूर्ण निर्देश:</b><br>1. कृपया भुगतान का स्क्रीनशॉट स्कूल के साथ साझा करें, तभी रसीद जारी की जाएगी।<br>2. कृपया लॉगिन कोड किसी के साथ साझा न करें।
+                <b>Important Instructions:</b><br>1. Please share the payment screenshot with the school for receipt generation.<br>2. Do not share your login code.<br><br>
+                <b>महत्वपूर्ण निर्देश:</b><br>1. भुगतान का स्क्रीनशॉट स्कूल के साथ साझा करें, तभी रसीद जारी होगी।
             </div>
         </div>
 
         <div class="section-title">Calculate Fees</div>
         <div class="profile">
-            <div class="info"><span class="label">Tuition Fee Months :</span><br><select id="calcTuitionMonths"></select></div>
-            <div class="info"><span class="label">Transport Fee Months :</span><br><select id="calcTransportMonths"></select></div>
-            <div class="info"><span class="label">Exam Fee Months :</span><br><select id="calcExamMonths"></select></div>
-            <div class="info" style="font-size:18px;"><span class="label">Fees to be Paid :</span> <span id="calcTotal">₹0</span></div>
-            <button id="payNowBtn" class="pay-btn">Pay Now</button>
-            <button id="sendScreenshotCalcBtn" class="whatsapp-btn">Send Screenshot to WhatsApp</button>
+            <div class="info"><label class="label">Tuition Months :</label><br><select id="calcTuitionMonths"></select></div>
+            <div class="info"><label class="label">Transport Months :</label><br><select id="calcTransportMonths"></select></div>
+            <div class="info"><label class="label">Exam Fee (No. of Exams) :</label><br><select id="calcExamMonths"></select></div>
+            <div class="info" style="font-size:18px;"><span class="label">Estimated Total :</span> <span id="calcTotal">₹0</span></div>
+            <button id="payNowBtn" class="pay-btn">Pay Estimated Amount</button>
+            <button id="sendScreenshotCalcBtn" class="whatsapp-btn"><i class="fab fa-whatsapp"></i> Send Screenshot to School</button>
             
             <div class="instructions">
-                <b>Important Instructions:</b><br>1. Please share the screenshot of the payment with the school, then only the receipt slip will be made.<br>2. Please do not share login code with anyone.<br><br>
-                <b>महत्वपूर्ण निर्देश:</b><br>1. कृपया भुगतान का स्क्रीनशॉट स्कूल के साथ साझा करें, तभी रसीद जारी की जाएगी।<br>2. कृपया लॉगिन कोड किसी के साथ साझा न करें।
+                <b>Note:</b> This is an automated calculation based on your current fee structure.
             </div>
         </div>
     </div>
 
+    <div id="view-attendance" style="display:none">
+        <button class="back-btn" onclick="showView('view-dashboard')">← Back</button>
+        <div class="profile" style="text-align:center;"><h3>Attendance feature coming soon</h3></div>
+    </div>
+
     <div id="view-datesheet" style="display:none">
-        <button class="back-btn" onclick="showView('view-dashboard')" style="background:#555; color:white; border:none; padding:10px; margin:15px; border-radius:5px;">← Back</button>
+        <button class="back-btn" onclick="showView('view-dashboard')">← Back</button>
         <div class="section-title" id="ds-title">Date Sheet</div>
-        <div class="table-container view-table-mobile">
+        <div class="table-container" style="display:block">
             <table>
-                <thead><tr><th class="date-col">Date</th><th>Subject</th></tr></thead>
+                <thead><tr><th>Date</th><th>Subject</th></tr></thead>
                 <tbody id="dsBody"></tbody>
             </table>
         </div>
     </div>
 
-    <div id="view-attendance" style="display:none">...</div>
-    <div id="view-result" style="display:none">...</div>
+    <div id="view-result" style="display:none">
+        <button class="back-btn" onclick="showView('view-dashboard')">← Back</button>
+        <div class="profile" style="text-align:center;"><h3>Results are not published yet</h3></div>
+    </div>
+
 </div>
 
 <script src="script.js"></script>
