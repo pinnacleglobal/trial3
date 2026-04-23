@@ -121,17 +121,30 @@ function renderFees(adm, mData, fRows) {
     originalDiscount = disc;
     
     let tableHtml = "", cardsHtml = "", totalPaid = 0;
+
+    // Updated Table Header mapping
+    const tableHeader = `<tr><th>Date</th><th>Slip Number</th><th>Amount Paid</th><th>Fee Type</th><th>Session</th><th>Tuition Fee Months</th><th>Transport Fee Months</th><th>Exam Fee Months</th><th>Payment Mode</th></tr>`;
+    document.querySelector("#view-fees thead").innerHTML = tableHeader;
     
     fRows.slice(1).forEach(r => {
         if (r[2] == adm) {
             let amt = parseFloat(r[5]) || 0;
             if (r[7] === "2026-27" && r[6]?.toLowerCase() === "monthly fees") totalPaid += amt;
+            
+            // Table Rows
             tableHtml += `<tr><td>${r[1]||''}</td><td>${r[0]||''}</td><td>₹${amt}</td><td>${r[6]||''}</td><td>${r[7]||''}</td><td>${r[8]||''}</td><td>${r[9]||''}</td><td>${r[10]||''}</td><td>${r[11]||''}</td></tr>`;
+            
+            // Fee Cards with Blue Bold Labels
             cardsHtml += `<div class="fee-card">
-                <div><b>Date:</b> ${r[1]||''}</div><div><b>Slip:</b> ${r[0]||''}</div><div><b>Amount:</b> ₹${amt}</div>
-                <div><b>Type:</b> ${r[6]||''}</div><div><b>Session:</b> ${r[7]||''}</div>
-                <div><b>Tuition Months:</b> ${r[8]||''}</div><div><b>Transport Months:</b> ${r[9]||''}</div>
-                <div><b>Exam Months:</b> ${r[10]||''}</div><div><b>Mode:</b> ${r[11]||''}</div>
+                <div><span class="label">Date:</span> ${r[1]||''}</div>
+                <div><span class="label">Slip Number:</span> ${r[0]||''}</div>
+                <div><span class="label">Amount Paid:</span> ₹${amt}</div>
+                <div><span class="label">Fee Type:</span> ${r[6]||''}</div>
+                <div><span class="label">Session:</span> ${r[7]||''}</div>
+                <div><span class="label">Tuition Fee Months:</span> ${r[8]||''}</div>
+                <div><span class="label">Transport Fee Months:</span> ${r[9]||''}</div>
+                <div><span class="label">Exam Fee Months:</span> ${r[10]||''}</div>
+                <div><span class="label">Payment Mode:</span> ${r[11]||''}</div>
             </div>`;
         }
     });
@@ -139,6 +152,7 @@ function renderFees(adm, mData, fRows) {
     document.getElementById("feeTable").innerHTML = tableHtml || "<tr><td colspan='9'>No records found</td></tr>";
     document.getElementById("feeCards").innerHTML = cardsHtml || "No records found";
     
+    // ... remaining logic for calculations and balance remains the same ...
     document.getElementById("monthlyTuition").innerText = "₹" + monthly;
     document.getElementById("tuitionMonths").innerText = mData[6] || 0;
     document.getElementById("transportFees").innerText = "₹" + (mData[7] || 0);
