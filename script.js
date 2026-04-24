@@ -188,7 +188,7 @@ function setupDateSheet(rows, studentClass) {
         if(isMajor) {
             html += `<tr class="ds-type-header"><td colspan="2">Minor Exams</td></tr>`;
             [3, 4].forEach(idx => { if(rows[idx]?.[0]) html += `<tr><td>${rows[idx][0]}</td><td>${rows[idx][classCol] || '-'}</td></tr>`; });
-            html += `<tr class="ds-type-header" style="background-color: darkblue; color: white;"><td colspan="2">Major Exams</td></tr>`;
+            html += `<tr class="ds-type-header" style="color: darkblue;"><td colspan="2">Major Exams</td></tr>`;
         }
         [6, 7, 8, 9, 10, 11].forEach(idx => { if(rows[idx]?.[0]) html += `<tr><td>${rows[idx][0]}</td><td>${rows[idx][classCol] || '-'}</td></tr>`; });
     }
