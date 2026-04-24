@@ -60,12 +60,21 @@
         .whatsapp-btn{ background:#25D366; color:white; font-size:14px; padding:10px; border-radius:6px; border:none; margin-top:10px; width: 100%; cursor:pointer; display: block; text-align: center; font-weight: bold; }
         .instructions { font-size: 13px; background: #fff3cd; padding: 15px; border-radius: 6px; margin-top: 15px; border: 1px solid #ffeeba; line-height: 1.5; }
         
-        .ds-type-header { 
-    background: #0b3d91 !important; /* Added !important to override alternating colors */
-    color: white !important;      /* Added !important to keep text white */
-    padding: 8px; 
+       .ds-type-header { 
+    /* This changes ONLY the Minor/Major Exam rows */
+    background: #4a4a4a !important; 
+    color: #ffffff !important; 
+    padding: 10px; 
     font-weight: bold; 
-    text-align: center; 
+    text-align: center;
+    text-transform: uppercase; /* Optional: makes it look more like a category */
+    letter-spacing: 1px;
+}
+
+/* This keeps your Column Headers (Date/Subject) Dark Blue as they are now */
+th { 
+    background: #0b3d91; 
+    color: white; 
 }
     </style>
 </head>
