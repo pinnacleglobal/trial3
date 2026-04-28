@@ -221,7 +221,13 @@ function handlePermissions(rows) {
         const b = document.getElementById("btn-result"); 
         if(b) { b.classList.remove("frozen"); b.onclick = () => showView('view-result'); }
     }
-    if (rows[19]?.[10] === "Publish") globalNotification = rows[20]?.[9] || "No notification to show";
+    if (rows[19]?.[10] === "Publish") { 
+        globalNotification = rows[20]?.[9] || "No notification to show";
+        // Show the red badge
+        document.getElementById("notifBadge").style.display = "block";
+    } else {
+        document.getElementById("notifBadge").style.display = "none";
+    }
 }
 
 function populateStudentProfile(aw, master) {
@@ -306,6 +312,9 @@ function setupSendScreenshotButtons() {
 
 // Custom Notification Logic (No URL shown)
 function showNotification() {
+    // Hide the red badge once the user clicks the bell
+    document.getElementById("notifBadge").style.display = "none";
+
     const overlay = document.createElement('div');
     overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px;";
     overlay.innerHTML = `<div style="background:white; padding:20px; border-radius:10px; max-width:400px; width:100%; text-align:center; box-shadow:0 5px 15px rgba(0,0,0,0.3);">
