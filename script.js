@@ -305,3 +305,10 @@ function logout() {
 }
 
 function showNotification() { alert("📢 School Notice:\n\n" + globalNotification); }
+
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+    .then(() => console.log("Service Worker Registered"))
+    .catch(err => console.log("Service Worker Failed", err));
+}
