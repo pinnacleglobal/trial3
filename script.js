@@ -304,11 +304,84 @@ function logout() {
     location.reload();
 }
 
-function showNotification() { alert("📢 School Notice:\n\n" + globalNotification); }
+let deferredPrompt;
+const installBtn = document.getElementById('installBtn');
+
+// Capture the install event
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Only show button if we are not logged in (loginBox is visible)
+    if (document.getElementById("loginBox").style.display !== "none") {
+        installBtn.style.display = 'block';
+    }
+});
+
+// Install button click logic
+installBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            installBtn.style.display = 'none';
+        }
+        deferredPrompt = null;
+    }
+});
+
+// Hide button when app is installed
+window.addEventListener('appinstalled', () => {
+    installBtn.style.display = 'none';
+    deferredPrompt = null;
+});
+
+// Update showView to hide install button when entering the portal
+const originalShowView = showView; // Store original
+showView = function(viewId, isHardwareBack = false) {
+    // Call the original function logic
+    const views = ['view-dashboard', 'view-fees', 'view-attendance', 'view-datesheet', 'view-result'];
+    views.forEach(v => {
+        const el = document.getElementById(v);
+        if(el) el.style.display = (v === viewId) ? 'block' : 'none';
+    });
+    localStorage.setItem("currentView", viewId);
+    if (!isHardwareBack && viewId !== 'view-dashboard') {
+        history.pushState({view: viewId}, "");
+    }
+    window.scrollTo(0,0);
+
+    // NEW: Hide install button whenever any portal view is shown
+    installBtn.style.display = 'none';
+};
+
+// FIX: Notification without the URL (pinnacleglobal.github.io)
+// We use a custom Modal or a simple confirm/alert trick. 
+// Standard 'alert' ALWAYS shows the URL in browsers. 
+// To hide the URL, we can use a basic 'window.confirm' or a simple custom alert:
+function showNotification() {
+    // To strictly remove the URL, we use a trick or a custom UI.
+    // Since you want to avoid the URL, I'll provide a cleaner looking custom alert:
+    const msg = "📢 School Notice:\n\n" + globalNotification;
+    
+    // Create a temporary overlay to block the background
+    const overlay = document.createElement('div');
+    overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;";
+    
+    const box = document.createElement('div');
+    box.style = "background:white; padding:20px; border-radius:10px; max-width:400px; width:100%; text-align:center; box-shadow:0 5px 15px rgba(0,0,0,0.3);";
+    box.innerHTML = `<h3 style="margin-top:0; color:#0b3d91;">Notice</h3><p style="white-space:pre-wrap; text-align:left;">${globalNotification}</p><button id="closeNotif" style="margin-top:15px; background:#0b3d91; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;">Close</button>`;
+    
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    
+    document.getElementById('closeNotif').onclick = () => document.body.removeChild(overlay);
+}
 
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js')
     .then(() => console.log("Service Worker Registered"))
+    .catch(err => console.log("Service Worker Failed", err));
+}
     .catch(err => console.log("Service Worker Failed", err));
 }
