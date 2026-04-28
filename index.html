@@ -27,23 +27,7 @@
             cursor: pointer;
         }
 
-/* Notification Badge Styling */
-.notif-wrapper { position: relative; display: inline-block; }
-
-.badge {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background-color: red;
-    color: white;
-    border-radius: 50%;
-    padding: 2px 6px;
-    font-size: 12px;
-    font-weight: bold;
-    display: none; /* Hidden by default */
-    border: 2px solid #0b3d91; /* Matches header background */
-}
-        
+                   
         body{ font-family:Arial, sans-serif; margin:0; background:#f2f5ff; color: #333; }
         .header{ background:#0b3d91; text-align:center; padding:20px; color:white; position: relative; }
         .logo{ width:140px; margin-bottom:10px; filter: drop-shadow(0 0 6px rgba(255,255,255,0.9)); }
@@ -53,6 +37,24 @@
         .login-box{ text-align:center; padding:30px; margin-top: 50px; display: none; } /* Hidden initially for flicker-fix */
         input, select{ padding:12px; width:230px; font-size:16px; border:1px solid #ccc; border-radius:4px; margin: 5px 0; }
         button{ padding:12px 25px; font-size:16px; background:#0b3d91; color:white; border:none; border-radius:4px; cursor:pointer; }
+
+         /* Notification Badge Styling */
+            .notif-wrapper { position: relative; display: inline-block; }
+
+            .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+            font-weight: bold;
+            display: none; /* Hidden by default */
+            border: 2px solid #0b3d91; /* Matches header background */
+            }
+
         
         /* Dashboard Layout */
         .nav-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
