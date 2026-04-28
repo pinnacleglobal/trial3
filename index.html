@@ -26,6 +26,23 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             cursor: pointer;
         }
+
+/* Notification Badge Styling */
+.notif-wrapper { position: relative; display: inline-block; }
+
+.badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    font-weight: bold;
+    display: none; /* Hidden by default */
+    border: 2px solid #0b3d91; /* Matches header background */
+}
         
         body{ font-family:Arial, sans-serif; margin:0; background:#f2f5ff; color: #333; }
         .header{ background:#0b3d91; text-align:center; padding:20px; color:white; position: relative; }
@@ -86,9 +103,11 @@
 <button id="installBtn">Install App</button>
 
 <div class="header">
-    <div id="notifIcon" class="notif-bell" onclick="showNotification()" style="display:none;"><i class="fas fa-bell"></i></div>
-    <img src="images/logo.png" class="logo">
-    <h2>Student Portal</h2>
+   <div id="notifIcon" class="notif-bell" onclick="showNotification()" style="display:none;">
+    <div class="notif-wrapper">
+        <i class="fas fa-bell"></i>
+        <span id="notifBadge" class="badge">1</span>
+    </div>
 </div>
 
 <div class="loader" id="loader" style="display: block;">
