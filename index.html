@@ -2,35 +2,38 @@
 <html>
 <head>
     <link rel="manifest" href="manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Student Portal</title>
     <link rel="icon" type="image/png" href="images/logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* Install Button - Top Left */
         #installBtn {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 1000;
-    padding: 8px 12px;
-    font-size: 12px;
-    background: #d4af37;
-    color: black;
-    border-radius: 4px;
-    font-weight: bold;
-    display: none; /* Hidden by default */
-    border: none;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1001;
+            padding: 8px 12px;
+            font-size: 12px;
+            background: #d4af37;
+            color: black;
+            border-radius: 4px;
+            font-weight: bold;
+            display: none; /* Managed by script */
+            border: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        
         body{ font-family:Arial, sans-serif; margin:0; background:#f2f5ff; color: #333; }
         .header{ background:#0b3d91; text-align:center; padding:20px; color:white; position: relative; }
         .logo{ width:140px; margin-bottom:10px; filter: drop-shadow(0 0 6px rgba(255,255,255,0.9)); }
         
         /* Icons & Buttons */
         .notif-bell { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; color: #d4af37; }
-        .login-box{ text-align:center; padding:30px; margin-top: 50px; }
+        .login-box{ text-align:center; padding:30px; margin-top: 50px; display: none; } /* Hidden initially for flicker-fix */
         input, select{ padding:12px; width:230px; font-size:16px; border:1px solid #ccc; border-radius:4px; margin: 5px 0; }
         button{ padding:12px 25px; font-size:16px; background:#0b3d91; color:white; border:none; border-radius:4px; cursor:pointer; }
         
@@ -79,23 +82,25 @@
     </style>
 </head>
 <body>
+
 <button id="installBtn">Install App</button>
+
 <div class="header">
     <div id="notifIcon" class="notif-bell" onclick="showNotification()" style="display:none;"><i class="fas fa-bell"></i></div>
     <img src="images/logo.png" class="logo">
     <h2>Student Portal</h2>
 </div>
 
-<div class="login-box" id="loginBox" style="display:none">
+<div class="loader" id="loader" style="display: block;">
+    <div class="spinner"></div><br>
+    <span id="loaderText">Securing Connection...</span>
+</div>
+
+<div class="login-box" id="loginBox">
     <h3>Student Login</h3>
     <input type="text" id="loginCode" placeholder="Enter Login Code">
     <br><br>
     <button id="loginBtn" onclick="login()">Login</button>
-</div>
-
-<div class="loader" id="loader">
-    <div class="spinner"></div><br>
-    <span id="loaderText">Loading Secure Data...</span>
 </div>
 
 <div id="portal" style="display:none">
@@ -132,7 +137,17 @@
         <div class="table-container">
             <table>
                 <thead>
-                    <tr><th>Date</th><th>Slip</th><th>Amount</th><th>Type</th><th>Session</th><th>T-Months</th><th>Tr-Months</th><th>Ex-Months</th><th>Mode</th></tr>
+                    <tr>
+                        <th>Date</th>
+                        <th>Slip Number</th>
+                        <th>Amount Paid</th>
+                        <th>Fee Type</th>
+                        <th>Session</th>
+                        <th>Tuition Fee Months</th>
+                        <th>Transport Fee Months</th>
+                        <th>Exam Fee Months</th>
+                        <th>Payment Mode</th>
+                    </tr>
                 </thead>
                 <tbody id="feeTable"></tbody>
             </table>
