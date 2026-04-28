@@ -10,60 +10,55 @@ const sheets = {
 
 let originalDiscount = 0;
 let globalNotification = "No notification to show";
+let deferredPrompt;
 
-// --- ROBUST INITIALIZATION (FIXES FLICKER & REFRESH) ---
+// --- INITIALIZATION & SESSION CHECK ---
 document.addEventListener("DOMContentLoaded", () => {
     const savedCode = localStorage.getItem("portalLoginCode");
     const savedView = localStorage.getItem("currentView") || "view-dashboard";
+    const loginBox = document.getElementById("loginBox");
+    const loader = document.getElementById("loader");
 
     if (savedCode) {
-        // Keep login box hidden, show loader, and auto-login
-        document.getElementById("loginBox").style.display = "none";
-        document.getElementById("loader").style.display = "block";
-        document.getElementById("loginCode").value = savedCode;
-        login(true, savedView); 
+        // We have a session, try to login automatically
+        login(true, savedView);
     } else {
-        // No session found, show login box immediately
-        document.getElementById("loginBox").style.display = "block";
-        document.getElementById("loader").style.display = "none";
+        // No session, show login screen immediately
+        loader.style.display = "none";
+        loginBox.style.display = "block";
     }
 
-    // Handle Mobile Hardware Back Button
-    window.onpopstate = function(event) {
+    // Safety Timeout: If nothing happens in 8 seconds, show login box
+    setTimeout(() => {
+        if (loader.style.display !== "none" && document.getElementById("portal").style.display === "none") {
+            loader.style.display = "none";
+            loginBox.style.display = "block";
+        }
+    }, 8000);
+
+    // Mobile Back Button Logic
+    window.onpopstate = function() {
         if (document.getElementById("portal").style.display === "block") {
-            const currentVisible = getCurrentVisibleView();
-            if (currentVisible !== 'view-dashboard') {
-                showView('view-dashboard', true); 
-            } else {
-                // Allows exiting if user is already on the dashboard
-                history.back();
-            }
+            const current = getCurrentVisibleView();
+            if (current !== 'view-dashboard') showView('view-dashboard', true);
         }
     };
 });
 
-function getCurrentVisibleView() {
-    const views = ['view-dashboard', 'view-fees', 'view-attendance', 'view-datesheet', 'view-result'];
-    return views.find(id => {
-        const el = document.getElementById(id);
-        return el && el.style.display === 'block';
-    });
-}
-
 async function login(isAuto = false, targetView = 'view-dashboard') {
     const codeInput = document.getElementById("loginCode");
-    const code = codeInput.value.trim();
-    
-    if (!code) { 
-        if(!isAuto) alert("Enter Login Code"); 
-        document.getElementById("loginBox").style.display = "block";
-        return; 
+    const loginBox = document.getElementById("loginBox");
+    const loader = document.getElementById("loader");
+    const code = isAuto ? localStorage.getItem("portalLoginCode") : codeInput.value.trim();
+
+    if (!code) {
+        loader.style.display = "none";
+        loginBox.style.display = "block";
+        return;
     }
-    
-    // UI transition to loading state
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("loader").style.display = "block";
-    document.getElementById("loginBtn").disabled = true;
+
+    loginBox.style.display = "none";
+    loader.style.display = "block";
 
     try {
         const urls = [
@@ -76,93 +71,95 @@ async function login(isAuto = false, targetView = 'view-dashboard') {
         const responses = await Promise.all(urls.map(url => fetch(url)));
         const data = await Promise.all(responses.map(res => res.json()));
 
-        const awRows = data[0].values || [];
-        const masterRows = data[1].values || [];
-        const feesRows = data[2].values || [];
-        const dsRows = data[3].values || [];
+        // Check if data is valid
+        if (!data[0].values) throw new Error("Could not fetch data");
 
-        const student = awRows.find(r => r[29] && r[29].trim() === code);
+        const student = data[0].values.find(r => r[29] && r[29].trim() === code);
         
-        if (!student) { 
-            if(!isAuto) alert("Invalid Login Code.");
-            logout();
-            return; 
-        }
-
-        const mRow = masterRows.find(r => r[1] == student[1]);
-        if (!mRow) {
-            if(!isAuto) alert("Master Data missing. Contact Admin.");
+        if (!student) {
+            if (!isAuto) alert("Invalid Login Code");
             logout();
             return;
         }
 
-        // Save session data
+        const mRow = (data[1].values || []).find(r => r[1] == student[1]);
+        if (!mRow) {
+            alert("Master Data missing. Contact Admin.");
+            logout();
+            return;
+        }
+
         localStorage.setItem("portalLoginCode", code);
 
-        handlePermissions(dsRows);
+        handlePermissions(data[3].values);
         populateStudentProfile(student, mRow);
-        renderFees(student[1], mRow, feesRows);
-        setupDateSheet(dsRows, mRow[14]);
+        renderFees(student[1], mRow, data[2].values);
+        setupDateSheet(data[3].values, mRow[14]);
 
-        document.getElementById("loader").style.display = "none";
+        loader.style.display = "none";
         document.getElementById("portal").style.display = "block";
         document.getElementById("notifIcon").style.display = "block";
         
-        // Ensure a history state exists for the back button to function
-        if(history.state === null) {
-            history.pushState({view: 'dashboard'}, "");
-        }
-        
+        if (!history.state) history.pushState({view: 'dashboard'}, "");
         showView(targetView);
         setupSendScreenshotButtons();
 
     } catch (e) {
         console.error("Login Error:", e);
-        document.getElementById("loginBox").style.display = "block";
-        resetLoader();
+        loader.style.display = "none";
+        loginBox.style.display = "block";
     }
 }
 
-function resetLoader() {
-    document.getElementById("loader").style.display = "none";
-    document.getElementById("loginBtn").disabled = false;
-}
+// --- PWA INSTALL LOGIC ---
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Show button only if we are at the login stage
+    if (document.getElementById("portal").style.display === "none") {
+        document.getElementById("installBtn").style.display = "block";
+    }
+});
 
-function handlePermissions(rows) {
-    if (!rows || rows.length < 20) return;
-    if (rows[13]?.[10] === "Publish") {
-        const b = document.getElementById("btn-datesheet");
-        if(b) { b.classList.remove("frozen"); b.onclick = () => showView('view-datesheet'); }
+document.getElementById("installBtn").onclick = async () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') document.getElementById("installBtn").style.display = "none";
+        deferredPrompt = null;
     }
-    if (rows[15]?.[10] === "Publish") {
-        const b = document.getElementById("btn-result");
-        if(b) { b.classList.remove("frozen"); b.onclick = () => showView('view-result'); }
-    }
-    if (rows[19]?.[10] === "Publish") {
-        globalNotification = rows[20]?.[9] || "No notification to show"; 
-    }
-}
+};
 
-function populateStudentProfile(aw, master) {
-    document.getElementById("welcomeName").innerText = "Welcome, " + (aw[3] || "Student");
-    document.getElementById("studentName").innerText = aw[3] || "N/A";
-    document.getElementById("adm").innerText = aw[1] || "N/A";
-    document.getElementById("class").innerText = master[14] || "N/A";
-    document.getElementById("father").innerText = aw[6] || "N/A";
-    document.getElementById("mother").innerText = aw[5] || "N/A";
-    document.getElementById("phone").innerText = aw[22] || "N/A";
-    document.getElementById("address").innerText = aw[7] || "N/A";
+// --- CORE NAVIGATION FUNCTIONS ---
+function showView(viewId, isHardwareBack = false) {
+    const views = ['view-dashboard', 'view-fees', 'view-attendance', 'view-datesheet', 'view-result'];
+    views.forEach(v => {
+        const el = document.getElementById(v);
+        if(el) el.style.display = (v === viewId) ? 'block' : 'none';
+    });
+
+    localStorage.setItem("currentView", viewId);
     
-    const photoImg = document.getElementById("studentPhoto");
-    if (aw[28]) {
-        const fileIdMatch = aw[28].match(/[-\w]{25,}/);
-        if (fileIdMatch) {
-            photoImg.src = `https://drive.google.com/thumbnail?id=${fileIdMatch[0]}&sz=w500`;
-            photoImg.onload = () => photoImg.style.display = "inline-block";
-        }
+    if (!isHardwareBack && viewId !== 'view-dashboard') {
+        history.pushState({view: viewId}, "");
     }
+    
+    // Always hide install button when inside the portal
+    document.getElementById("installBtn").style.display = "none";
+    window.scrollTo(0,0);
 }
 
+function getCurrentVisibleView() {
+    const views = ['view-dashboard', 'view-fees', 'view-attendance', 'view-datesheet', 'view-result'];
+    return views.find(id => document.getElementById(id).style.display === 'block');
+}
+
+function logout() {
+    localStorage.clear();
+    location.reload();
+}
+
+// --- DATA RENDERING FUNCTIONS ---
 function renderFees(adm, mData, fRows) {
     let monthly = parseFloat(mData[4]) || 0;
     let remain = parseFloat(mData[3]) || 0;
@@ -170,20 +167,13 @@ function renderFees(adm, mData, fRows) {
     originalDiscount = disc;
     let tableHtml = "", cardsHtml = "", totalPaid = 0;
 
-    // Updated Table Headers with your specific labels
-    const tableHeader = `<tr><th>Date</th><th>Slip Number</th><th>Amount Paid</th><th>Fee Type</th><th>Session</th><th>Tuition Fee Months</th><th>Transport Fee Months</th><th>Exam Fee Months</th><th>Payment Mode</th></tr>`;
-    const thead = document.querySelector("#view-fees table thead");
-    if(thead) thead.innerHTML = tableHeader;
-    
     fRows.slice(1).forEach(r => {
         if (r[2] == adm) {
             let amt = parseFloat(r[5]) || 0;
             if (r[7] === "2026-27" && r[6]?.toLowerCase() === "monthly fees") totalPaid += amt;
             
-            // Table Body
             tableHtml += `<tr><td>${r[1]||''}</td><td>${r[0]||''}</td><td>₹${amt}</td><td>${r[6]||''}</td><td>${r[7]||''}</td><td>${r[8]||''}</td><td>${r[9]||''}</td><td>${r[10]||''}</td><td>${r[11]||''}</td></tr>`;
             
-            // Mobile Cards with your specific labels
             cardsHtml += `<div class="fee-card">
                 <div><span class="label">Date:</span> ${r[1]||''}</div>
                 <div><span class="label">Slip Number:</span> ${r[0]||''}</div>
@@ -220,17 +210,48 @@ function renderFees(adm, mData, fRows) {
     populateFeeSelectors(parseFloat(mData[9]) || 1000, monthly, parseFloat(mData[7]) || 0);
     setupPaymentLink(balance, "payBalanceBtn");
 }
+
+function handlePermissions(rows) {
+    if (!rows) return;
+    if (rows[13]?.[10] === "Publish") { 
+        const b = document.getElementById("btn-datesheet"); 
+        if(b) { b.classList.remove("frozen"); b.onclick = () => showView('view-datesheet'); }
+    }
+    if (rows[15]?.[10] === "Publish") { 
+        const b = document.getElementById("btn-result"); 
+        if(b) { b.classList.remove("frozen"); b.onclick = () => showView('view-result'); }
+    }
+    if (rows[19]?.[10] === "Publish") globalNotification = rows[20]?.[9] || "No notification to show";
+}
+
+function populateStudentProfile(aw, master) {
+    document.getElementById("welcomeName").innerText = "Welcome, " + (aw[3] || "Student");
+    document.getElementById("studentName").innerText = aw[3] || "N/A";
+    document.getElementById("adm").innerText = aw[1] || "N/A";
+    document.getElementById("class").innerText = master[14] || "N/A";
+    document.getElementById("father").innerText = aw[6] || "N/A";
+    document.getElementById("mother").innerText = aw[5] || "N/A";
+    document.getElementById("phone").innerText = aw[22] || "N/A";
+    document.getElementById("address").innerText = aw[7] || "N/A";
+    const photoImg = document.getElementById("studentPhoto");
+    if (aw[28]) {
+        const fileIdMatch = aw[28].match(/[-\w]{25,}/);
+        if (fileIdMatch) { 
+            photoImg.src = `https://drive.google.com/thumbnail?id=${fileIdMatch[0]}&sz=w500`; 
+            photoImg.onload = () => photoImg.style.display = "inline-block"; 
+        }
+    }
+}
+
 function setupDateSheet(rows, studentClass) {
     if (!rows || rows.length < 2) return;
     const examType = rows[0]?.[1] || ""; 
     document.getElementById("ds-title").innerText = "Date Sheet: " + examType;
     let classCol = -1;
-    const headerRow = rows[1]; 
-    for(let j=1; j<=15; j++) { if(headerRow[j] == studentClass) { classCol = j; break; } }
+    for(let j=1; j<=15; j++) { if(rows[1][j] == studentClass) { classCol = j; break; } }
     let html = "";
-    const isMajor = examType.includes("Half Yearly") || examType.includes("Annual");
     if(classCol !== -1) {
-        if(isMajor) {
+        if(examType.includes("Half Yearly") || examType.includes("Annual")) {
             html += `<tr class="ds-type-header"><td colspan="2">Minor Exams</td></tr>`;
             [3, 4].forEach(idx => { if(rows[idx]?.[0]) html += `<tr><td>${rows[idx][0]}</td><td>${rows[idx][classCol] || '-'}</td></tr>`; });
             html += `<tr class="ds-type-header"><td colspan="2">Major Exams</td></tr>`;
@@ -241,10 +262,10 @@ function setupDateSheet(rows, studentClass) {
 }
 
 function populateFeeSelectors(exFee, monthly, transport) {
-    const t = document.getElementById("calcTuitionMonths");
-    const tr = document.getElementById("calcTransportMonths");
-    const ex = document.getElementById("calcExamMonths");
-    const res = document.getElementById("calcTotal");
+    const t = document.getElementById("calcTuitionMonths"), 
+          tr = document.getElementById("calcTransportMonths"), 
+          ex = document.getElementById("calcExamMonths"), 
+          res = document.getElementById("calcTotal");
     if(!t || !tr || !ex || !res) return;
     t.innerHTML = tr.innerHTML = ex.innerHTML = "";
     for(let i=0; i<=12; i++) t.innerHTML += `<option value="${i}">${i}</option>`;
@@ -262,7 +283,7 @@ function setupPaymentLink(amount, btnId) {
     const btn = document.getElementById(btnId);
     if(!btn) return;
     btn.onclick = () => {
-        if (amount <= 0) { alert("Enter an amount greater than 0"); return; }
+        if (amount <= 0) return alert("Enter amount > 0");
         const adm = document.getElementById("adm").innerText;
         const name = document.getElementById("studentName").innerText;
         const note = encodeURIComponent(`${adm} ${name} FEE`);
@@ -272,7 +293,9 @@ function setupPaymentLink(amount, btnId) {
 
 function setupSendScreenshotButtons() {
     const handler = () => {
-        const msg = encodeURIComponent(`Hello, I have completed the payment.\nAdmission No: ${document.getElementById("adm").innerText}\nName: ${document.getElementById("studentName").innerText}`);
+        const adm = document.getElementById("adm").innerText;
+        const name = document.getElementById("studentName").innerText;
+        const msg = encodeURIComponent(`Hello, I have completed the payment.\nAdmission No: ${adm}\nName: ${name}`);
         window.location.href = `https://wa.me/917830968000?text=${msg}`;
     };
     const b1 = document.getElementById("sendScreenshotBalanceBtn");
@@ -281,107 +304,21 @@ function setupSendScreenshotButtons() {
     if(b2) b2.onclick = handler;
 }
 
-function showView(viewId, isHardwareBack = false) {
-    const views = ['view-dashboard', 'view-fees', 'view-attendance', 'view-datesheet', 'view-result'];
-    views.forEach(v => {
-        const el = document.getElementById(v);
-        if(el) el.style.display = (v === viewId) ? 'block' : 'none';
-    });
-
-    // Save the view to handle refresh persistence
-    localStorage.setItem("currentView", viewId);
-
-    if (!isHardwareBack) {
-        if (viewId !== 'view-dashboard') {
-            history.pushState({view: viewId}, "");
-        }
-    }
-    window.scrollTo(0,0);
-}
-
-function logout() {
-    localStorage.clear();
-    location.reload();
-}
-
-let deferredPrompt;
-const installBtn = document.getElementById('installBtn');
-
-// Capture the install event
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    // Only show button if we are not logged in (loginBox is visible)
-    if (document.getElementById("loginBox").style.display !== "none") {
-        installBtn.style.display = 'block';
-    }
-});
-
-// Install button click logic
-installBtn.addEventListener('click', async () => {
-    if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-            installBtn.style.display = 'none';
-        }
-        deferredPrompt = null;
-    }
-});
-
-// Hide button when app is installed
-window.addEventListener('appinstalled', () => {
-    installBtn.style.display = 'none';
-    deferredPrompt = null;
-});
-
-// Update showView to hide install button when entering the portal
-const originalShowView = showView; // Store original
-showView = function(viewId, isHardwareBack = false) {
-    // Call the original function logic
-    const views = ['view-dashboard', 'view-fees', 'view-attendance', 'view-datesheet', 'view-result'];
-    views.forEach(v => {
-        const el = document.getElementById(v);
-        if(el) el.style.display = (v === viewId) ? 'block' : 'none';
-    });
-    localStorage.setItem("currentView", viewId);
-    if (!isHardwareBack && viewId !== 'view-dashboard') {
-        history.pushState({view: viewId}, "");
-    }
-    window.scrollTo(0,0);
-
-    // NEW: Hide install button whenever any portal view is shown
-    installBtn.style.display = 'none';
-};
-
-// FIX: Notification without the URL (pinnacleglobal.github.io)
-// We use a custom Modal or a simple confirm/alert trick. 
-// Standard 'alert' ALWAYS shows the URL in browsers. 
-// To hide the URL, we can use a basic 'window.confirm' or a simple custom alert:
+// Custom Notification Logic (No URL shown)
 function showNotification() {
-    // To strictly remove the URL, we use a trick or a custom UI.
-    // Since you want to avoid the URL, I'll provide a cleaner looking custom alert:
-    const msg = "📢 School Notice:\n\n" + globalNotification;
-    
-    // Create a temporary overlay to block the background
     const overlay = document.createElement('div');
-    overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;";
-    
-    const box = document.createElement('div');
-    box.style = "background:white; padding:20px; border-radius:10px; max-width:400px; width:100%; text-align:center; box-shadow:0 5px 15px rgba(0,0,0,0.3);";
-    box.innerHTML = `<h3 style="margin-top:0; color:#0b3d91;">Notice</h3><p style="white-space:pre-wrap; text-align:left;">${globalNotification}</p><button id="closeNotif" style="margin-top:15px; background:#0b3d91; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;">Close</button>`;
-    
-    overlay.appendChild(box);
+    overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px;";
+    overlay.innerHTML = `<div style="background:white; padding:20px; border-radius:10px; max-width:400px; width:100%; text-align:center; box-shadow:0 5px 15px rgba(0,0,0,0.3);">
+        <h3 style="margin-top:0; color:#0b3d91;">Notice</h3>
+        <p style="white-space:pre-wrap; text-align:left; font-size:14px; color:#333;">${globalNotification}</p>
+        <button onclick="this.parentElement.parentElement.remove()" style="margin-top:15px; background:#0b3d91; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold;">Close</button>
+    </div>`;
     document.body.appendChild(overlay);
-    
-    document.getElementById('closeNotif').onclick = () => document.body.removeChild(overlay);
 }
 
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js')
     .then(() => console.log("Service Worker Registered"))
-    .catch(err => console.log("Service Worker Failed", err));
-}
     .catch(err => console.log("Service Worker Failed", err));
 }
