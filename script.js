@@ -170,7 +170,8 @@ function renderFees(adm, mData, fRows) {
     originalDiscount = disc;
     let tableHtml = "", cardsHtml = "", totalPaid = 0;
 
-    const tableHeader = `<tr><th>Date</th><th>Slip</th><th>Amount</th><th>Type</th><th>Session</th><th>T-Months</th><th>Tr-Months</th><th>Ex-Months</th><th>Mode</th></tr>`;
+    // Updated Table Headers with your specific labels
+    const tableHeader = `<tr><th>Date</th><th>Slip Number</th><th>Amount Paid</th><th>Fee Type</th><th>Session</th><th>Tuition Fee Months</th><th>Transport Fee Months</th><th>Exam Fee Months</th><th>Payment Mode</th></tr>`;
     const thead = document.querySelector("#view-fees table thead");
     if(thead) thead.innerHTML = tableHeader;
     
@@ -178,8 +179,22 @@ function renderFees(adm, mData, fRows) {
         if (r[2] == adm) {
             let amt = parseFloat(r[5]) || 0;
             if (r[7] === "2026-27" && r[6]?.toLowerCase() === "monthly fees") totalPaid += amt;
+            
+            // Table Body
             tableHtml += `<tr><td>${r[1]||''}</td><td>${r[0]||''}</td><td>₹${amt}</td><td>${r[6]||''}</td><td>${r[7]||''}</td><td>${r[8]||''}</td><td>${r[9]||''}</td><td>${r[10]||''}</td><td>${r[11]||''}</td></tr>`;
-            cardsHtml += `<div class="fee-card"><div><span class="label">Date:</span> ${r[1]||''}</div><div><span class="label">Slip:</span> ${r[0]||''}</div><div><span class="label">Amount:</span> ₹${amt}</div><div><span class="label">Type:</span> ${r[6]||''}</div><div><span class="label">Session:</span> ${r[7]||''}</div><div><span class="label">T-Months:</span> ${r[8]||''}</div><div><span class="label">Tr-Months:</span> ${r[9]||''}</div><div><span class="label">Ex-Months:</span> ${r[10]||''}</div><div><span class="label">Mode:</span> ${r[11]||''}</div></div>`;
+            
+            // Mobile Cards with your specific labels
+            cardsHtml += `<div class="fee-card">
+                <div><span class="label">Date:</span> ${r[1]||''}</div>
+                <div><span class="label">Slip Number:</span> ${r[0]||''}</div>
+                <div><span class="label">Amount Paid:</span> ₹${amt}</div>
+                <div><span class="label">Fee Type:</span> ${r[6]||''}</div>
+                <div><span class="label">Session:</span> ${r[7]||''}</div>
+                <div><span class="label">Tuition Fee Months:</span> ${r[8]||''}</div>
+                <div><span class="label">Transport Fee Months:</span> ${r[9]||''}</div>
+                <div><span class="label">Exam Fee Months:</span> ${r[10]||''}</div>
+                <div><span class="label">Payment Mode:</span> ${r[11]||''}</div>
+            </div>`;
         }
     });
 
@@ -205,7 +220,6 @@ function renderFees(adm, mData, fRows) {
     populateFeeSelectors(parseFloat(mData[9]) || 1000, monthly, parseFloat(mData[7]) || 0);
     setupPaymentLink(balance, "payBalanceBtn");
 }
-
 function setupDateSheet(rows, studentClass) {
     if (!rows || rows.length < 2) return;
     const examType = rows[0]?.[1] || ""; 
