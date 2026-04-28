@@ -11,26 +11,31 @@ const sheets = {
 let originalDiscount = 0;
 let globalNotification = "No notification to show";
 
-// --- ROBUST SESSION & MOBILE NAVIGATION ---
+// --- ROBUST INITIALIZATION (FIXES FLICKER & REFRESH) ---
 document.addEventListener("DOMContentLoaded", () => {
     const savedCode = localStorage.getItem("portalLoginCode");
     const savedView = localStorage.getItem("currentView") || "view-dashboard";
 
     if (savedCode) {
+        // Keep login box hidden, show loader, and auto-login
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("loader").style.display = "block";
         document.getElementById("loginCode").value = savedCode;
-        // Auto-login and return to the last viewed page
         login(true, savedView); 
+    } else {
+        // No session found, show login box immediately
+        document.getElementById("loginBox").style.display = "block";
+        document.getElementById("loader").style.display = "none";
     }
 
-    // Handle Hardware Back Button
+    // Handle Mobile Hardware Back Button
     window.onpopstate = function(event) {
         if (document.getElementById("portal").style.display === "block") {
             const currentVisible = getCurrentVisibleView();
             if (currentVisible !== 'view-dashboard') {
-                // If on any sub-page, back button takes you to dashboard
                 showView('view-dashboard', true); 
             } else {
-                // If already on dashboard, let the browser go back to previous site
+                // Allows exiting if user is already on the dashboard
                 history.back();
             }
         }
@@ -39,18 +44,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function getCurrentVisibleView() {
     const views = ['view-dashboard', 'view-fees', 'view-attendance', 'view-datesheet', 'view-result'];
-    return views.find(id => document.getElementById(id).style.display === 'block');
+    return views.find(id => {
+        const el = document.getElementById(id);
+        return el && el.style.display === 'block';
+    });
 }
 
 async function login(isAuto = false, targetView = 'view-dashboard') {
     const codeInput = document.getElementById("loginCode");
     const code = codeInput.value.trim();
-    if (!code) { if(!isAuto) alert("Enter Login Code"); return; }
     
-    if(!isAuto) {
-        document.getElementById("loginBtn").disabled = true;
-        document.getElementById("loader").style.display = "block";
+    if (!code) { 
+        if(!isAuto) alert("Enter Login Code"); 
+        document.getElementById("loginBox").style.display = "block";
+        return; 
     }
+    
+    // UI transition to loading state
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("loader").style.display = "block";
+    document.getElementById("loginBtn").disabled = true;
 
     try {
         const urls = [
@@ -78,11 +91,12 @@ async function login(isAuto = false, targetView = 'view-dashboard') {
 
         const mRow = masterRows.find(r => r[1] == student[1]);
         if (!mRow) {
-            if(!isAuto) alert("Master Data missing.");
+            if(!isAuto) alert("Master Data missing. Contact Admin.");
             logout();
             return;
         }
 
+        // Save session data
         localStorage.setItem("portalLoginCode", code);
 
         handlePermissions(dsRows);
@@ -90,12 +104,11 @@ async function login(isAuto = false, targetView = 'view-dashboard') {
         renderFees(student[1], mRow, feesRows);
         setupDateSheet(dsRows, mRow[14]);
 
-        document.getElementById("loginBox").style.display = "none";
         document.getElementById("loader").style.display = "none";
         document.getElementById("portal").style.display = "block";
         document.getElementById("notifIcon").style.display = "block";
         
-        // Push initial state so "Back" has a place to go
+        // Ensure a history state exists for the back button to function
         if(history.state === null) {
             history.pushState({view: 'dashboard'}, "");
         }
@@ -105,34 +118,10 @@ async function login(isAuto = false, targetView = 'view-dashboard') {
 
     } catch (e) {
         console.error("Login Error:", e);
+        document.getElementById("loginBox").style.display = "block";
         resetLoader();
     }
 }
-
-function showView(viewId, isHardwareBack = false) {
-    const views = ['view-dashboard', 'view-fees', 'view-attendance', 'view-datesheet', 'view-result'];
-    views.forEach(v => {
-        const el = document.getElementById(v);
-        if(el) el.style.display = (v === viewId) ? 'block' : 'none';
-    });
-
-    // Save view to handle refresh
-    localStorage.setItem("currentView", viewId);
-
-    if (!isHardwareBack) {
-        if (viewId !== 'view-dashboard') {
-            history.pushState({view: viewId}, "");
-        }
-    }
-    window.scrollTo(0,0);
-}
-
-function logout() {
-    localStorage.clear();
-    location.reload();
-}
-
-// --- KEEPING ALL YOUR ORIGINAL LOGIC FUNCTIONS BELOW ---
 
 function resetLoader() {
     document.getElementById("loader").style.display = "none";
@@ -182,7 +171,8 @@ function renderFees(adm, mData, fRows) {
     let tableHtml = "", cardsHtml = "", totalPaid = 0;
 
     const tableHeader = `<tr><th>Date</th><th>Slip</th><th>Amount</th><th>Type</th><th>Session</th><th>T-Months</th><th>Tr-Months</th><th>Ex-Months</th><th>Mode</th></tr>`;
-    document.querySelector("#view-fees table thead").innerHTML = tableHeader;
+    const thead = document.querySelector("#view-fees table thead");
+    if(thead) thead.innerHTML = tableHeader;
     
     fRows.slice(1).forEach(r => {
         if (r[2] == adm) {
@@ -275,6 +265,29 @@ function setupSendScreenshotButtons() {
     const b2 = document.getElementById("sendScreenshotCalcBtn");
     if(b1) b1.onclick = handler;
     if(b2) b2.onclick = handler;
+}
+
+function showView(viewId, isHardwareBack = false) {
+    const views = ['view-dashboard', 'view-fees', 'view-attendance', 'view-datesheet', 'view-result'];
+    views.forEach(v => {
+        const el = document.getElementById(v);
+        if(el) el.style.display = (v === viewId) ? 'block' : 'none';
+    });
+
+    // Save the view to handle refresh persistence
+    localStorage.setItem("currentView", viewId);
+
+    if (!isHardwareBack) {
+        if (viewId !== 'view-dashboard') {
+            history.pushState({view: viewId}, "");
+        }
+    }
+    window.scrollTo(0,0);
+}
+
+function logout() {
+    localStorage.clear();
+    location.reload();
 }
 
 function showNotification() { alert("📢 School Notice:\n\n" + globalNotification); }
