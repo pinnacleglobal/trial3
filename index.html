@@ -41,13 +41,8 @@
         @media(max-width:600px){ .table-container{display:none;} .fee-cards{display:block;} }
 
         /* Date sheet table alternating coloring */
-#dsBody tr:nth-child(even) {
-    background-color: #e8f1ff; /* Light Blue */
-}
-
-#dsBody tr:nth-child(odd) {
-    background-color: #ffffff; /* White */
-}
+        #dsBody tr:nth-child(even) { background-color: #e8f1ff; }
+        #dsBody tr:nth-child(odd) { background-color: #ffffff; }
 
         /* Status Elements */
         .loader{ display:none; text-align:center; padding:30px; }
@@ -55,27 +50,14 @@
         @keyframes spin{ 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
 
         /* Back & Utility Buttons */
-        .back-btn { margin: 15px; background: #555; color: white; padding: 10px 15px; border-radius: 5px; cursor: pointer; border: none; }
+        .back-btn { margin: 20px 15px; background: #555; color: white; padding: 12px 15px; border-radius: 5px; cursor: pointer; border: none; display: block; width: calc(100% - 30px); font-weight: bold; }
         .pay-btn{ background:#28a745; color:white; border:none; padding:12px 25px; border-radius:4px; cursor:pointer; font-size:16px; width: 100%; margin-top: 10px; }
         .whatsapp-btn{ background:#25D366; color:white; font-size:14px; padding:10px; border-radius:6px; border:none; margin-top:10px; width: 100%; cursor:pointer; display: block; text-align: center; font-weight: bold; }
         .instructions { font-size: 13px; background: #fff3cd; padding: 15px; border-radius: 6px; margin-top: 15px; border: 1px solid #ffeeba; line-height: 1.5; }
         
-       .ds-type-header { 
-    /* This changes ONLY the Minor/Major Exam rows */
-    background: #4a4a4a !important; 
-    color: #ffffff !important; 
-    padding: 10px; 
-    font-weight: bold; 
-    text-align: center;
-    text-transform: uppercase; /* Optional: makes it look more like a category */
-    letter-spacing: 1px;
-}
+        .ds-type-header { background: #4a4a4a !important; color: #ffffff !important; padding: 10px; font-weight: bold; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
 
-/* This keeps your Column Headers (Date/Subject) Dark Blue as they are now */
-th { 
-    background: #0b3d91; 
-    color: white; 
-}
+        th { background: #0b3d91; color: white; }
     </style>
 </head>
 <body>
@@ -124,12 +106,10 @@ th {
             <div id="btn-result" class="nav-btn frozen"><i class="fas fa-poll"></i>Result</div>
         </div>
         
-        <div style="text-align:center; margin:30px;"><button onclick="location.reload()" style="background:#666;">Logout</button></div>
+        <div style="text-align:center; margin:30px;"><button onclick="logout()" style="background:#666;">Logout</button></div>
     </div>
 
     <div id="view-fees" style="display:none">
-        <button class="back-btn" onclick="showView('view-dashboard')">← Back to Dashboard</button>
-        
         <div class="section-title">Paid Fee Details</div>
         <div class="table-container">
             <table>
@@ -166,10 +146,10 @@ th {
         </div>
 
         <div class="section-title">Calculate Fees</div>
-       <div class="profile">
-    <div class="info"><label class="label">Choose Monthly Tuition Fee Months :</label><br><select id="calcTuitionMonths"></select></div>
-    <div class="info"><label class="label">Choose Transport Fee Months :</label><br><select id="calcTransportMonths"></select></div>
-    <div class="info"><label class="label">Choose Exam Fee Months :</label><br><select id="calcExamMonths"></select></div>
+        <div class="profile">
+            <div class="info"><label class="label">Choose Monthly Tuition Fee Months :</label><br><select id="calcTuitionMonths"></select></div>
+            <div class="info"><label class="label">Choose Transport Fee Months :</label><br><select id="calcTransportMonths"></select></div>
+            <div class="info"><label class="label">Choose Exam Fee Months :</label><br><select id="calcExamMonths"></select></div>
             <div class="info" style="font-size:18px;"><span class="label">Estimated Total :</span> <span id="calcTotal">₹0</span></div>
             <button id="payNowBtn" class="pay-btn">Pay Estimated Amount</button>
             <button id="sendScreenshotCalcBtn" class="whatsapp-btn"><i class="fab fa-whatsapp"></i> Send Screenshot to School</button>
@@ -178,32 +158,33 @@ th {
                 <b>Note:</b> This is an automated calculation based on your current fee structure.
             </div>
         </div>
+        <button class="back-btn" onclick="showView('view-dashboard')">← Back to Dashboard</button>
     </div>
 
     <div id="view-attendance" style="display:none">
-        <button class="back-btn" onclick="showView('view-dashboard')">← Back</button>
         <div class="profile" style="text-align:center;"><h3>Attendance feature coming soon</h3></div>
+        <button class="back-btn" onclick="showView('view-dashboard')">← Back to Dashboard</button>
     </div>
 
     <div id="view-datesheet" style="display:none">
-    <button class="back-btn" onclick="showView('view-dashboard')">← Back</button>
-    <div class="section-title" id="ds-title">Date Sheet</div>
-    <div class="table-container" style="display:block">
-        <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Subject</th>
-                </tr>
-            </thead>
-            <tbody id="dsBody"></tbody>
-        </table>
+        <div class="section-title" id="ds-title">Date Sheet</div>
+        <div class="table-container" style="display:block">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Subject</th>
+                    </tr>
+                </thead>
+                <tbody id="dsBody"></tbody>
+            </table>
+        </div>
+        <button class="back-btn" onclick="showView('view-dashboard')">← Back to Dashboard</button>
     </div>
-</div>
 
     <div id="view-result" style="display:none">
-        <button class="back-btn" onclick="showView('view-dashboard')">← Back</button>
         <div class="profile" style="text-align:center;"><h3>Results are not published yet</h3></div>
+        <button class="back-btn" onclick="showView('view-dashboard')">← Back to Dashboard</button>
     </div>
 
 </div>
