@@ -309,7 +309,7 @@ function showNotification() {
     const overlay = document.createElement('div');
     overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px;";
     overlay.innerHTML = `<div style="background:white; padding:20px; border-radius:10px; max-width:400px; width:100%; text-align:center; box-shadow:0 5px 15px rgba(0,0,0,0.3);">
-        <h3 style="margin-top:0; color:#0b3d91;">Notice</h3>
+        <h3 style="margin-top:0; color:#0b3d91;">📢 School Notice</h3>
         <p style="white-space:pre-wrap; text-align:left; font-size:14px; color:#333;">${globalNotification}</p>
         <button onclick="this.parentElement.parentElement.remove()" style="margin-top:15px; background:#0b3d91; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold;">Close</button>
     </div>`;
