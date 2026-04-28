@@ -9,6 +9,21 @@
     <link rel="icon" type="image/png" href="images/logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        #installBtn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+    padding: 8px 12px;
+    font-size: 12px;
+    background: #d4af37;
+    color: black;
+    border-radius: 4px;
+    font-weight: bold;
+    display: none; /* Hidden by default */
+    border: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
         body{ font-family:Arial, sans-serif; margin:0; background:#f2f5ff; color: #333; }
         .header{ background:#0b3d91; text-align:center; padding:20px; color:white; position: relative; }
         .logo{ width:140px; margin-bottom:10px; filter: drop-shadow(0 0 6px rgba(255,255,255,0.9)); }
@@ -64,7 +79,7 @@
     </style>
 </head>
 <body>
-
+<button id="installBtn">Install App</button>
 <div class="header">
     <div id="notifIcon" class="notif-bell" onclick="showNotification()" style="display:none;"><i class="fas fa-bell"></i></div>
     <img src="images/logo.png" class="logo">
