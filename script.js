@@ -11,21 +11,27 @@ const sheets = {
 let originalDiscount = 0;
 let globalNotification = "No notification to show";
 
-// --- INITIALIZATION & SESSION LOGIC ---
+// --- ROBUST SESSION & MOBILE NAVIGATION ---
 document.addEventListener("DOMContentLoaded", () => {
-    // Check for saved session (Fixes Logout on Refresh)
     const savedCode = localStorage.getItem("portalLoginCode");
+    const savedView = localStorage.getItem("currentView") || "view-dashboard";
+
     if (savedCode) {
         document.getElementById("loginCode").value = savedCode;
-        login(true); 
+        // Auto-login and return to the last viewed page
+        login(true, savedView); 
     }
 
-    // Handle Mobile Back Button (Fixes Browser Exit)
+    // Handle Hardware Back Button
     window.onpopstate = function(event) {
         if (document.getElementById("portal").style.display === "block") {
-            const currentView = getCurrentVisibleView();
-            if (currentView !== 'view-dashboard') {
+            const currentVisible = getCurrentVisibleView();
+            if (currentVisible !== 'view-dashboard') {
+                // If on any sub-page, back button takes you to dashboard
                 showView('view-dashboard', true); 
+            } else {
+                // If already on dashboard, let the browser go back to previous site
+                history.back();
             }
         }
     };
@@ -36,7 +42,7 @@ function getCurrentVisibleView() {
     return views.find(id => document.getElementById(id).style.display === 'block');
 }
 
-async function login(isAuto = false) {
+async function login(isAuto = false, targetView = 'view-dashboard') {
     const codeInput = document.getElementById("loginCode");
     const code = codeInput.value.trim();
     if (!code) { if(!isAuto) alert("Enter Login Code"); return; }
@@ -72,7 +78,7 @@ async function login(isAuto = false) {
 
         const mRow = masterRows.find(r => r[1] == student[1]);
         if (!mRow) {
-            if(!isAuto) alert("Master Data missing. Contact Admin.");
+            if(!isAuto) alert("Master Data missing.");
             logout();
             return;
         }
@@ -88,14 +94,45 @@ async function login(isAuto = false) {
         document.getElementById("loader").style.display = "none";
         document.getElementById("portal").style.display = "block";
         document.getElementById("notifIcon").style.display = "block";
+        
+        // Push initial state so "Back" has a place to go
+        if(history.state === null) {
+            history.pushState({view: 'dashboard'}, "");
+        }
+        
+        showView(targetView);
         setupSendScreenshotButtons();
 
     } catch (e) {
         console.error("Login Error:", e);
-        if(!isAuto) alert("Connection Error. Try again.");
         resetLoader();
     }
 }
+
+function showView(viewId, isHardwareBack = false) {
+    const views = ['view-dashboard', 'view-fees', 'view-attendance', 'view-datesheet', 'view-result'];
+    views.forEach(v => {
+        const el = document.getElementById(v);
+        if(el) el.style.display = (v === viewId) ? 'block' : 'none';
+    });
+
+    // Save view to handle refresh
+    localStorage.setItem("currentView", viewId);
+
+    if (!isHardwareBack) {
+        if (viewId !== 'view-dashboard') {
+            history.pushState({view: viewId}, "");
+        }
+    }
+    window.scrollTo(0,0);
+}
+
+function logout() {
+    localStorage.clear();
+    location.reload();
+}
+
+// --- KEEPING ALL YOUR ORIGINAL LOGIC FUNCTIONS BELOW ---
 
 function resetLoader() {
     document.getElementById("loader").style.display = "none";
@@ -106,17 +143,11 @@ function handlePermissions(rows) {
     if (!rows || rows.length < 20) return;
     if (rows[13]?.[10] === "Publish") {
         const b = document.getElementById("btn-datesheet");
-        if(b) {
-            b.classList.remove("frozen");
-            b.onclick = () => showView('view-datesheet');
-        }
+        if(b) { b.classList.remove("frozen"); b.onclick = () => showView('view-datesheet'); }
     }
     if (rows[15]?.[10] === "Publish") {
         const b = document.getElementById("btn-result");
-        if(b) {
-            b.classList.remove("frozen");
-            b.onclick = () => showView('view-result');
-        }
+        if(b) { b.classList.remove("frozen"); b.onclick = () => showView('view-result'); }
     }
     if (rows[19]?.[10] === "Publish") {
         globalNotification = rows[20]?.[9] || "No notification to show"; 
@@ -148,30 +179,17 @@ function renderFees(adm, mData, fRows) {
     let remain = parseFloat(mData[3]) || 0;
     let disc = parseFloat(mData[5]) || 0;
     originalDiscount = disc;
-    
     let tableHtml = "", cardsHtml = "", totalPaid = 0;
 
-    const tableHeader = `<tr><th>Date</th><th>Slip Number</th><th>Amount Paid</th><th>Fee Type</th><th>Session</th><th>Tuition Fee Months</th><th>Transport Fee Months</th><th>Exam Fee Months</th><th>Payment Mode</th></tr>`;
-    document.querySelector("#view-fees thead").innerHTML = tableHeader;
+    const tableHeader = `<tr><th>Date</th><th>Slip</th><th>Amount</th><th>Type</th><th>Session</th><th>T-Months</th><th>Tr-Months</th><th>Ex-Months</th><th>Mode</th></tr>`;
+    document.querySelector("#view-fees table thead").innerHTML = tableHeader;
     
     fRows.slice(1).forEach(r => {
         if (r[2] == adm) {
             let amt = parseFloat(r[5]) || 0;
             if (r[7] === "2026-27" && r[6]?.toLowerCase() === "monthly fees") totalPaid += amt;
-            
             tableHtml += `<tr><td>${r[1]||''}</td><td>${r[0]||''}</td><td>₹${amt}</td><td>${r[6]||''}</td><td>${r[7]||''}</td><td>${r[8]||''}</td><td>${r[9]||''}</td><td>${r[10]||''}</td><td>${r[11]||''}</td></tr>`;
-            
-            cardsHtml += `<div class="fee-card">
-                <div><span class="label">Date:</span> ${r[1]||''}</div>
-                <div><span class="label">Slip Number:</span> ${r[0]||''}</div>
-                <div><span class="label">Amount Paid:</span> ₹${amt}</div>
-                <div><span class="label">Fee Type:</span> ${r[6]||''}</div>
-                <div><span class="label">Session:</span> ${r[7]||''}</div>
-                <div><span class="label">Tuition Fee Months:</span> ${r[8]||''}</div>
-                <div><span class="label">Transport Fee Months:</span> ${r[9]||''}</div>
-                <div><span class="label">Exam Fee Months:</span> ${r[10]||''}</div>
-                <div><span class="label">Payment Mode:</span> ${r[11]||''}</div>
-            </div>`;
+            cardsHtml += `<div class="fee-card"><div><span class="label">Date:</span> ${r[1]||''}</div><div><span class="label">Slip:</span> ${r[0]||''}</div><div><span class="label">Amount:</span> ₹${amt}</div><div><span class="label">Type:</span> ${r[6]||''}</div><div><span class="label">Session:</span> ${r[7]||''}</div><div><span class="label">T-Months:</span> ${r[8]||''}</div><div><span class="label">Tr-Months:</span> ${r[9]||''}</div><div><span class="label">Ex-Months:</span> ${r[10]||''}</div><div><span class="label">Mode:</span> ${r[11]||''}</div></div>`;
         }
     });
 
@@ -186,9 +204,7 @@ function renderFees(adm, mData, fRows) {
     document.getElementById("prevRemain").innerText = "₹" + remain;
     document.getElementById("discount").innerText = "₹" + Math.round(disc);
 
-    let totalFee = ((monthly - disc) * (parseFloat(mData[6]) || 0)) + 
-                   ((parseFloat(mData[7]) || 0) * (parseFloat(mData[8]) || 0)) + 
-                   (parseFloat(mData[9]) || 1000) + remain;
+    let totalFee = ((monthly - disc) * (parseFloat(mData[6]) || 0)) + ((parseFloat(mData[7]) || 0) * (parseFloat(mData[8]) || 0)) + (parseFloat(mData[9]) || 1000) + remain;
     let balance = Math.round(totalFee - totalPaid);
 
     document.getElementById("totalPaid").innerText = "₹" + totalPaid;
@@ -259,25 +275,6 @@ function setupSendScreenshotButtons() {
     const b2 = document.getElementById("sendScreenshotCalcBtn");
     if(b1) b1.onclick = handler;
     if(b2) b2.onclick = handler;
-}
-
-function showView(viewId, isHardwareBack = false) {
-    ['view-dashboard', 'view-fees', 'view-attendance', 'view-datesheet', 'view-result'].forEach(v => {
-        const el = document.getElementById(v);
-        if(el) el.style.display = (v === viewId) ? 'block' : 'none';
-    });
-
-    if (!isHardwareBack) {
-        if (viewId !== 'view-dashboard') {
-            history.pushState({view: viewId}, "");
-        }
-    }
-    window.scrollTo(0,0);
-}
-
-function logout() {
-    localStorage.removeItem("portalLoginCode");
-    location.reload();
 }
 
 function showNotification() { alert("📢 School Notice:\n\n" + globalNotification); }
