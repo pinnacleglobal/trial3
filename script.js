@@ -127,7 +127,7 @@ function renderAttendance(adm, rows) {
         { name: "October", col: 223 }, { name: "November", col: 254 }, { name: "December", col: 286 },
         { name: "January", col: 318 }, { name: "February", col: 348 }, { name: "March", col: 380 }
     ];
-    let html = studentRow ? months.map(m => `<tr><td>${m.name}</td><td>${studentRow[m.col] || "0"}</td></tr>`).join('') : "<tr><td>No Data</td></tr>";
+    let html = studentRow ? months.map(m => `<tr><td>${m.name}</td><td>${studentRow[m.col] || "0"}</td></tr>`).join('') : "<tr><td>No attendance records found</td></tr>";
     document.getElementById("attBody").innerHTML = html;
 }
 
