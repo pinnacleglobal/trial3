@@ -55,21 +55,24 @@
         th,td{ border:1px solid #ddd; padding:12px; text-align:center; font-size:14px; }
         th{ background:#0b3d91; color:white; }
         
-        .fee-cards, .att-cards{ display:none; padding:15px; }
-        .fee-card, .att-card{ border-radius:12px; padding:16px; margin-bottom:15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); background: white; border: 1px solid #eee; }
-        .fee-card:nth-child(even), .att-card:nth-child(even) { background: #e8f1ff !important; }
+        .fee-cards{ display:none; padding:15px; }
+        .fee-card{ border-radius:12px; padding:16px; margin-bottom:15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); background: white; border: 1px solid #eee; }
+        .fee-card:nth-child(even) { background: #e8f1ff !important; }
         
-        @media(max-width:600px){ .table-container{display:none;} .fee-cards, .att-cards{display:block;} }
+        /* Attendance and Datesheet always show table */
+        @media(max-width:600px){ 
+            #view-fees .table-container{display:none;} 
+            #view-fees .fee-cards{display:block;} 
+            #view-attendance .table-container, #view-datesheet .table-container { display: block; }
+        }
 
         /* Zebra coloring */
-        #dsBody tr:nth-child(even), #attBody tr:nth-child(even) { background-color: #e8f1ff; }
+        #dsBody tr:nth-child(even), #attBody tr:nth-child(even), #feeTable tr:nth-child(even) { background-color: #e8f1ff; }
 
-        /* Status Elements */
         .loader{ display:none; text-align:center; padding:30px; }
         .spinner{ border:6px solid #f3f3f3; border-top:6px solid #d4af37; border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:auto; }
         @keyframes spin{ 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
 
-        /* Back & Utility Buttons */
         .back-btn { margin: 20px 15px; background: #555; color: white; padding: 12px 15px; border-radius: 5px; cursor: pointer; border: none; display: block; width: calc(100% - 30px); font-weight: bold; }
         .pay-btn{ background:#28a745; color:white; border:none; padding:12px 25px; border-radius:4px; cursor:pointer; font-size:16px; width: 100%; margin-top: 10px; }
         .whatsapp-btn{ background:#25D366; color:white; font-size:14px; padding:10px; border-radius:6px; border:none; margin-top:10px; width: 100%; cursor:pointer; display: block; text-align: center; font-weight: bold; }
@@ -135,15 +138,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Slip Number</th>
-                        <th>Amount Paid</th>
-                        <th>Fee Type</th>
-                        <th>Session</th>
-                        <th>Tuition Fee Months</th>
-                        <th>Transport Fee Months</th>
-                        <th>Exam Fee Months</th>
-                        <th>Payment Mode</th>
+                        <th>Date</th><th>Slip Number</th><th>Amount Paid</th><th>Fee Type</th><th>Session</th><th>Tuition Fee Months</th><th>Transport Fee Months</th><th>Exam Fee Months</th><th>Payment Mode</th>
                     </tr>
                 </thead>
                 <tbody id="feeTable"></tbody>
@@ -170,7 +165,8 @@
             <button id="sendScreenshotBalanceBtn" class="whatsapp-btn"><i class="fab fa-whatsapp"></i> Send Screenshot to School</button>
             
             <div class="instructions">
-                <b>Important Instruction:</b><br>Please share the payment screenshot with the school for receipt generation.
+                <b>Important Instruction:</b><br>Please share the payment screenshot with the school for receipt generation.<br><br>
+                <b>महत्वपूर्ण निर्देश:</b><br>भुगतान का स्क्रीनशॉट स्कूल के साथ साझा करें, तभी रसीद जारी होगी।
             </div>
         </div>
 
@@ -182,13 +178,16 @@
             <div class="info" style="font-size:18px;"><span class="label">Estimated Total :</span> <span id="calcTotal">₹0</span></div>
             <button id="payNowBtn" class="pay-btn">Pay Estimated Amount</button>
             <button id="sendScreenshotCalcBtn" class="whatsapp-btn"><i class="fab fa-whatsapp"></i> Send Screenshot to School</button>
+            <div class="instructions">
+                <b>Note:</b> This is an automated calculation based on your current fee structure.
+            </div>
         </div>
         <button class="back-btn" onclick="showView('view-dashboard')">← Back to Dashboard</button>
     </div>
 
     <div id="view-attendance" style="display:none">
         <div class="section-title">Monthly Attendance</div>
-        <div class="table-container" style="display:block">
+        <div class="table-container">
             <table>
                 <thead>
                     <tr><th>Month</th><th>Attendance</th></tr>
@@ -196,13 +195,12 @@
                 <tbody id="attBody"></tbody>
             </table>
         </div>
-        <div id="attCards" class="att-cards"></div>
         <button class="back-btn" onclick="showView('view-dashboard')">← Back to Dashboard</button>
     </div>
 
     <div id="view-datesheet" style="display:none">
         <div class="section-title" id="ds-title">Date Sheet</div>
-        <div class="table-container" style="display:block">
+        <div class="table-container">
             <table>
                 <thead><tr><th>Date</th><th>Subject</th></tr></thead>
                 <tbody id="dsBody"></tbody>
