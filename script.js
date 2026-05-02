@@ -13,7 +13,6 @@ let originalDiscount = 0;
 let globalNotification = "No notification to show";
 let deferredPrompt;
 
-// --- INITIALIZATION & SESSION CHECK ---
 document.addEventListener("DOMContentLoaded", () => {
     const savedCode = localStorage.getItem("portalLoginCode");
     const savedView = localStorage.getItem("currentView") || "view-dashboard";
@@ -27,7 +26,6 @@ document.addEventListener("DOMContentLoaded", () => {
         loginBox.style.display = "block";
     }
 
-    // Safety Timeout
     setTimeout(() => {
         if (loader.style.display !== "none" && document.getElementById("portal").style.display === "none") {
             loader.style.display = "none";
@@ -35,7 +33,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }, 8000);
 
-    // Mobile Back Button Logic
     window.onpopstate = function() {
         if (document.getElementById("portal").style.display === "block") {
             const current = getCurrentVisibleView();
@@ -91,19 +88,17 @@ async function login(isAuto = false, targetView = 'view-dashboard') {
 
         localStorage.setItem("portalLoginCode", code);
 
-        // POPULATE DATA
         handlePermissions(data[3].values);
         populateStudentProfile(student, mRow);
         renderFees(student[1], mRow, data[2].values);
         setupDateSheet(data[3].values, mRow[14]);
         renderAttendance(student[1], data[4].values);
 
-        // TRANSITION UI
         loader.style.display = "none";
         loginBox.style.display = "none"; 
         portal.style.display = "block";   
         document.getElementById("notifIcon").style.display = "block";
-        document.getElementById("installBtn").style.display = "none"; // Hide inside portal
+        document.getElementById("installBtn").style.display = "none";
         
         if (!history.state) history.pushState({view: 'dashboard'}, "");
         showView(targetView);
@@ -120,7 +115,6 @@ async function login(isAuto = false, targetView = 'view-dashboard') {
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    // Only show if not logged in
     if (document.getElementById("portal").style.display === "none") {
         document.getElementById("installBtn").style.display = "block";
     }
@@ -146,22 +140,19 @@ function renderAttendance(adm, rows) {
         { name: "January", col: 318 }, { name: "February", col: 348 }, { name: "March", col: 380 }
     ];
 
-    let html = "", cardsHtml = "";
+    let html = "";
     if (studentRow) {
         months.forEach(m => {
             let val = studentRow[m.col] || "0";
             html += `<tr><td>${m.name}</td><td>${val}</td></tr>`;
-            cardsHtml += `<div class="att-card"><span class="label">${m.name}:</span> ${val}</div>`;
         });
     } else {
         html = "<tr><td colspan='2'>No attendance records found</td></tr>";
-        cardsHtml = "No attendance records found";
     }
     document.getElementById("attBody").innerHTML = html;
-    document.getElementById("attCards").innerHTML = cardsHtml;
 }
 
-// --- NAVIGATION FUNCTIONS ---
+// --- CORE NAVIGATION ---
 function showView(viewId, isHardwareBack = false) {
     const views = ['view-dashboard', 'view-fees', 'view-attendance', 'view-datesheet', 'view-result'];
     views.forEach(v => {
@@ -183,7 +174,7 @@ function logout() {
     location.reload();
 }
 
-// --- FEE RENDERING ---
+// --- DATA RENDERING ---
 function renderFees(adm, mData, fRows) {
     let monthly = parseFloat(mData[4]) || 0;
     let remain = parseFloat(mData[3]) || 0;
@@ -195,13 +186,25 @@ function renderFees(adm, mData, fRows) {
         if (r[2] == adm) {
             let amt = parseFloat(r[5]) || 0;
             if (r[7] === "2026-27" && r[6]?.toLowerCase() === "monthly fees") totalPaid += amt;
+            
             tableHtml += `<tr><td>${r[1]||''}</td><td>${r[0]||''}</td><td>₹${amt}</td><td>${r[6]||''}</td><td>${r[7]||''}</td><td>${r[8]||''}</td><td>${r[9]||''}</td><td>${r[10]||''}</td><td>${r[11]||''}</td></tr>`;
-            cardsHtml += `<div class="fee-card"><span class="label">Date:</span> ${r[1]}<br><span class="label">Amount:</span> ₹${amt}</div>`;
+            
+            cardsHtml += `<div class="fee-card">
+                <div><span class="label">Date:</span> ${r[1]||''}</div>
+                <div><span class="label">Slip Number:</span> ${r[0]||''}</div>
+                <div><span class="label">Amount Paid:</span> ₹${amt}</div>
+                <div><span class="label">Fee Type:</span> ${r[6]||''}</div>
+                <div><span class="label">Session:</span> ${r[7]||''}</div>
+                <div><span class="label">Tuition Fee Months:</span> ${r[8]||''}</div>
+                <div><span class="label">Transport Fee Months:</span> ${r[9]||''}</div>
+                <div><span class="label">Exam Fee Months:</span> ${r[10]||''}</div>
+                <div><span class="label">Payment Mode:</span> ${r[11]||''}</div>
+            </div>`;
         }
     });
 
-    document.getElementById("feeTable").innerHTML = tableHtml || "<tr><td colspan='9'>No records</td></tr>";
-    document.getElementById("feeCards").innerHTML = cardsHtml || "No records";
+    document.getElementById("feeTable").innerHTML = tableHtml || "<tr><td colspan='9'>No records found</td></tr>";
+    document.getElementById("feeCards").innerHTML = cardsHtml || "No records found";
     document.getElementById("monthlyTuition").innerText = "₹" + monthly;
     document.getElementById("tuitionMonths").innerText = mData[6] || 0;
     document.getElementById("transportFees").innerText = "₹" + (mData[7] || 0);
@@ -236,7 +239,6 @@ function populateFeeSelectors(exFee, monthly, transport) {
     t.onchange = tr.onchange = ex.onchange = updateCalc;
 }
 
-// Rest of original helpers (setupDateSheet, populateStudentProfile, etc.)
 function handlePermissions(rows) {
     if (!rows) return;
     if (rows[13]?.[10] === "Publish") { 
