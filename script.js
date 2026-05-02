@@ -16,22 +16,12 @@ let deferredPrompt;
 document.addEventListener("DOMContentLoaded", () => {
     const savedCode = localStorage.getItem("portalLoginCode");
     const savedView = localStorage.getItem("currentView") || "view-dashboard";
-    const loginBox = document.getElementById("loginBox");
-    const loader = document.getElementById("loader");
-
     if (savedCode) {
         login(true, savedView);
     } else {
-        loader.style.display = "none";
-        loginBox.style.display = "block";
+        document.getElementById("loader").style.display = "none";
+        document.getElementById("loginBox").style.display = "block";
     }
-
-    setTimeout(() => {
-        if (loader.style.display !== "none" && document.getElementById("portal").style.display === "none") {
-            loader.style.display = "none";
-            loginBox.style.display = "block";
-        }
-    }, 8000);
 
     window.onpopstate = function() {
         if (document.getElementById("portal").style.display === "block") {
@@ -42,11 +32,10 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function login(isAuto = false, targetView = 'view-dashboard') {
-    const codeInput = document.getElementById("loginCode");
     const loginBox = document.getElementById("loginBox");
     const loader = document.getElementById("loader");
     const portal = document.getElementById("portal");
-    const code = isAuto ? localStorage.getItem("portalLoginCode") : codeInput.value.trim();
+    const code = isAuto ? localStorage.getItem("portalLoginCode") : document.getElementById("loginCode").value.trim();
 
     if (!code) {
         loader.style.display = "none";
@@ -58,63 +47,63 @@ async function login(isAuto = false, targetView = 'view-dashboard') {
     loader.style.display = "block";
 
     try {
-        const urls = [
+        // PRIORITY FETCH: Get basic student info and notices first
+        const priorityUrls = [
             `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheets.aw}?key=${apiKey}`,
             `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheets.master}?key=${apiKey}`,
-            `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheets.fees}?key=${apiKey}`,
-            `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheets.ds}?key=${apiKey}`,
-            `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheets.att}?key=${apiKey}`
+            `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheets.ds}?key=${apiKey}`
         ];
 
-        const responses = await Promise.all(urls.map(url => fetch(url)));
-        const data = await Promise.all(responses.map(res => res.json()));
+        const pResponses = await Promise.all(priorityUrls.map(url => fetch(url)));
+        const pData = await Promise.all(pResponses.map(res => res.json()));
 
-        if (!data[0].values) throw new Error("Could not fetch data");
-
-        const student = data[0].values.find(r => r[29] && r[29].trim() === code);
-        
+        const student = pData[0].values.find(r => r[29] && r[29].trim() === code);
         if (!student) {
             if (!isAuto) alert("Invalid Login Code");
-            logout();
-            return;
+            logout(); return;
         }
 
-        const mRow = (data[1].values || []).find(r => r[1] == student[1]);
-        if (!mRow) {
-            alert("Master Data missing.");
-            logout();
-            return;
-        }
+        const mRow = pData[1].values.find(r => r[1] == student[1]);
+        if (!mRow) { alert("Data error."); logout(); return; }
 
         localStorage.setItem("portalLoginCode", code);
 
-        handlePermissions(data[3].values);
+        // Render Dashboard Immediately
+        handlePermissions(pData[2].values);
         populateStudentProfile(student, mRow);
-        renderFees(student[1], mRow, data[2].values);
-        setupDateSheet(data[3].values, mRow[14]);
-        renderAttendance(student[1], data[4].values);
+        setupDateSheet(pData[2].values, mRow[14]);
 
         loader.style.display = "none";
-        loginBox.style.display = "none"; 
-        portal.style.display = "block";   
+        portal.style.display = "block";
         document.getElementById("notifIcon").style.display = "block";
         document.getElementById("installBtn").style.display = "none";
-        
-        if (!history.state) history.pushState({view: 'dashboard'}, "");
         showView(targetView);
-        setupSendScreenshotButtons();
+
+        // BACKGROUND FETCH: Fees and Attendance load while user looks at dashboard
+        fetchBackgroundData(student[1], mRow);
 
     } catch (e) {
-        console.error("Login Error:", e);
+        console.error(e);
         loader.style.display = "none";
         loginBox.style.display = "block";
     }
 }
 
-// --- PWA INSTALL LOGIC ---
+async function fetchBackgroundData(adm, mRow) {
+    const urls = [
+        `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheets.fees}?key=${apiKey}`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheets.att}?key=${apiKey}`
+    ];
+    const responses = await Promise.all(urls.map(url => fetch(url)));
+    const data = await Promise.all(responses.map(res => res.json()));
+
+    renderFees(adm, mRow, data[0].values);
+    renderAttendance(adm, data[1].values);
+    setupSendScreenshotButtons();
+}
+
 window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
+    e.preventDefault(); deferredPrompt = e;
     if (document.getElementById("portal").style.display === "none") {
         document.getElementById("installBtn").style.display = "block";
     }
@@ -129,7 +118,6 @@ document.getElementById("installBtn").onclick = async () => {
     }
 };
 
-// --- ATTENDANCE LOGIC ---
 function renderAttendance(adm, rows) {
     if (!rows || rows.length < 4) return;
     const studentRow = rows.slice(3).find(r => r[2] == adm);
@@ -139,20 +127,10 @@ function renderAttendance(adm, rows) {
         { name: "October", col: 223 }, { name: "November", col: 254 }, { name: "December", col: 286 },
         { name: "January", col: 318 }, { name: "February", col: 348 }, { name: "March", col: 380 }
     ];
-
-    let html = "";
-    if (studentRow) {
-        months.forEach(m => {
-            let val = studentRow[m.col] || "0";
-            html += `<tr><td>${m.name}</td><td>${val}</td></tr>`;
-        });
-    } else {
-        html = "<tr><td colspan='2'>No attendance records found</td></tr>";
-    }
+    let html = studentRow ? months.map(m => `<tr><td>${m.name}</td><td>${studentRow[m.col] || "0"}</td></tr>`).join('') : "<tr><td>No Data</td></tr>";
     document.getElementById("attBody").innerHTML = html;
 }
 
-// --- CORE NAVIGATION ---
 function showView(viewId, isHardwareBack = false) {
     const views = ['view-dashboard', 'view-fees', 'view-attendance', 'view-datesheet', 'view-result'];
     views.forEach(v => {
@@ -169,16 +147,10 @@ function getCurrentVisibleView() {
     return views.find(id => document.getElementById(id).style.display === 'block');
 }
 
-function logout() {
-    localStorage.clear();
-    location.reload();
-}
+function logout() { localStorage.clear(); location.reload(); }
 
-// --- DATA RENDERING ---
 function renderFees(adm, mData, fRows) {
-    let monthly = parseFloat(mData[4]) || 0;
-    let remain = parseFloat(mData[3]) || 0;
-    let disc = parseFloat(mData[5]) || 0;
+    let monthly = parseFloat(mData[4]) || 0, remain = parseFloat(mData[3]) || 0, disc = parseFloat(mData[5]) || 0;
     originalDiscount = disc;
     let tableHtml = "", cardsHtml = "", totalPaid = 0;
 
@@ -186,25 +158,13 @@ function renderFees(adm, mData, fRows) {
         if (r[2] == adm) {
             let amt = parseFloat(r[5]) || 0;
             if (r[7] === "2026-27" && r[6]?.toLowerCase() === "monthly fees") totalPaid += amt;
-            
             tableHtml += `<tr><td>${r[1]||''}</td><td>${r[0]||''}</td><td>₹${amt}</td><td>${r[6]||''}</td><td>${r[7]||''}</td><td>${r[8]||''}</td><td>${r[9]||''}</td><td>${r[10]||''}</td><td>${r[11]||''}</td></tr>`;
-            
-            cardsHtml += `<div class="fee-card">
-                <div><span class="label">Date:</span> ${r[1]||''}</div>
-                <div><span class="label">Slip Number:</span> ${r[0]||''}</div>
-                <div><span class="label">Amount Paid:</span> ₹${amt}</div>
-                <div><span class="label">Fee Type:</span> ${r[6]||''}</div>
-                <div><span class="label">Session:</span> ${r[7]||''}</div>
-                <div><span class="label">Tuition Fee Months:</span> ${r[8]||''}</div>
-                <div><span class="label">Transport Fee Months:</span> ${r[9]||''}</div>
-                <div><span class="label">Exam Fee Months:</span> ${r[10]||''}</div>
-                <div><span class="label">Payment Mode:</span> ${r[11]||''}</div>
-            </div>`;
+            cardsHtml += `<div class="fee-card"><div><span class="label">Date:</span> ${r[1]||''}</div><div><span class="label">Slip Number:</span> ${r[0]||''}</div><div><span class="label">Amount Paid:</span> ₹${amt}</div><div><span class="label">Fee Type:</span> ${r[6]||''}</div><div><span class="label">Session:</span> ${r[7]||''}</div><div><span class="label">Tuition Fee Months:</span> ${r[8]||''}</div><div><span class="label">Transport Fee Months:</span> ${r[9]||''}</div><div><span class="label">Exam Fee Months:</span> ${r[10]||''}</div><div><span class="label">Payment Mode:</span> ${r[11]||''}</div></div>`;
         }
     });
 
-    document.getElementById("feeTable").innerHTML = tableHtml || "<tr><td colspan='9'>No records found</td></tr>";
-    document.getElementById("feeCards").innerHTML = cardsHtml || "No records found";
+    document.getElementById("feeTable").innerHTML = tableHtml || "<tr><td colspan='9'>No records</td></tr>";
+    document.getElementById("feeCards").innerHTML = cardsHtml || "No records";
     document.getElementById("monthlyTuition").innerText = "₹" + monthly;
     document.getElementById("tuitionMonths").innerText = mData[6] || 0;
     document.getElementById("transportFees").innerText = "₹" + (mData[7] || 0);
@@ -242,25 +202,23 @@ function populateFeeSelectors(exFee, monthly, transport) {
 function handlePermissions(rows) {
     if (!rows) return;
     if (rows[13]?.[10] === "Publish") { 
-        const b = document.getElementById("btn-datesheet"); 
-        if(b) { b.classList.remove("frozen"); b.onclick = () => showView('view-datesheet'); }
+        const b = document.getElementById("btn-datesheet"); if(b) { b.classList.remove("frozen"); b.onclick = () => showView('view-datesheet'); }
     }
     if (rows[15]?.[10] === "Publish") { 
-        const b = document.getElementById("btn-result"); 
-        if(b) { b.classList.remove("frozen"); b.onclick = () => showView('view-result'); }
+        const b = document.getElementById("btn-result"); if(b) { b.classList.remove("frozen"); b.onclick = () => showView('view-result'); }
     }
     if (rows[19]?.[10] === "Publish") globalNotification = rows[20]?.[9] || "No notification";
 }
 
 function populateStudentProfile(aw, master) {
     document.getElementById("welcomeName").innerText = "Welcome, " + (aw[3] || "Student");
-    document.getElementById("studentName").innerText = aw[3] || "N/A";
-    document.getElementById("adm").innerText = aw[1] || "N/A";
-    document.getElementById("class").innerText = master[14] || "N/A";
-    document.getElementById("father").innerText = aw[6] || "N/A";
-    document.getElementById("mother").innerText = aw[5] || "N/A";
-    document.getElementById("phone").innerText = aw[22] || "N/A";
-    document.getElementById("address").innerText = aw[7] || "N/A";
+    document.getElementById("studentName").innerText = aw[3];
+    document.getElementById("adm").innerText = aw[1];
+    document.getElementById("class").innerText = master[14];
+    document.getElementById("father").innerText = aw[6];
+    document.getElementById("mother").innerText = aw[5];
+    document.getElementById("phone").innerText = aw[22];
+    document.getElementById("address").innerText = aw[7];
     const photoImg = document.getElementById("studentPhoto");
     if (aw[28]) {
         const fileIdMatch = aw[28].match(/[-\w]{25,}/);
@@ -290,41 +248,28 @@ function setupDateSheet(rows, studentClass) {
 }
 
 function setupPaymentLink(amount, btnId) {
-    const btn = document.getElementById(btnId);
-    if(!btn) return;
+    const btn = document.getElementById(btnId); if(!btn) return;
     btn.onclick = () => {
         if (amount <= 0) return alert("Enter amount > 0");
-        const adm = document.getElementById("adm").innerText;
-        const name = document.getElementById("studentName").innerText;
-        const note = encodeURIComponent(`${adm} ${name} FEE`);
+        const note = encodeURIComponent(`${document.getElementById("adm").innerText} ${document.getElementById("studentName").innerText} FEE`);
         window.location.href = `upi://pay?pa=pinnacleglobalschool.62697340@hdfcbank&pn=Pinnacle Global School&am=${amount}&cu=INR&tn=${note}`;
     };
 }
 
 function setupSendScreenshotButtons() {
     const handler = () => {
-        const adm = document.getElementById("adm").innerText;
-        const name = document.getElementById("studentName").innerText;
-        const msg = encodeURIComponent(`Hello, I have completed the payment.\nAdmission No: ${adm}\nName: ${name}`);
+        const msg = encodeURIComponent(`Hello, I have completed the payment.\nAdmission No: ${document.getElementById("adm").innerText}\nName: ${document.getElementById("studentName").innerText}`);
         window.location.href = `https://wa.me/917830968000?text=${msg}`;
     };
-    const b1 = document.getElementById("sendScreenshotBalanceBtn");
-    const b2 = document.getElementById("sendScreenshotCalcBtn");
-    if(b1) b1.onclick = handler;
-    if(b2) b2.onclick = handler;
+    const b1 = document.getElementById("sendScreenshotBalanceBtn"), b2 = document.getElementById("sendScreenshotCalcBtn");
+    if(b1) b1.onclick = handler; if(b2) b2.onclick = handler;
 }
 
 function showNotification() {
     const overlay = document.createElement('div');
     overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px;";
-    overlay.innerHTML = `<div style="background:white; padding:20px; border-radius:10px; max-width:400px; width:100%; text-align:center;">
-        <h3 style="color:#0b3d91;">📢 School Notice</h3>
-        <p style="white-space:pre-wrap; text-align:left; font-size:14px;">${globalNotification}</p>
-        <button onclick="this.parentElement.parentElement.remove()" style="background:#0b3d91; color:white; border:none; padding:10px 20px; border-radius:5px;">Close</button>
-    </div>`;
+    overlay.innerHTML = `<div style="background:white; padding:20px; border-radius:10px; max-width:400px; width:100%; text-align:center;"><h3 style="color:#0b3d91;">📢 School Notice</h3><p style="white-space:pre-wrap; text-align:left; font-size:14px;">${globalNotification}</p><button onclick="this.parentElement.parentElement.remove()" style="background:#0b3d91; color:white; border:none; padding:10px 20px; border-radius:5px;">Close</button></div>`;
     document.body.appendChild(overlay);
 }
 
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
-}
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
