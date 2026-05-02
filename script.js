@@ -64,7 +64,7 @@ async function login(isAuto = false, targetView = 'view-dashboard') {
         }
 
         const mRow = pData[1].values.find(r => r[1] == student[1]);
-        if (!mRow) { alert("Data error."); logout(); return; }
+        if (!mRow) { alert("Data Not Found. Contact School Admin"); logout(); return; }
 
         localStorage.setItem("portalLoginCode", code);
 
@@ -163,8 +163,8 @@ function renderFees(adm, mData, fRows) {
         }
     });
 
-    document.getElementById("feeTable").innerHTML = tableHtml || "<tr><td colspan='9'>No records</td></tr>";
-    document.getElementById("feeCards").innerHTML = cardsHtml || "No records";
+    document.getElementById("feeTable").innerHTML = tableHtml || "<tr><td colspan='9'>No records found</td></tr>";
+    document.getElementById("feeCards").innerHTML = cardsHtml || "No records found";
     document.getElementById("monthlyTuition").innerText = "₹" + monthly;
     document.getElementById("tuitionMonths").innerText = mData[6] || 0;
     document.getElementById("transportFees").innerText = "₹" + (mData[7] || 0);
