@@ -13,6 +13,7 @@ let originalDiscount = 0;
 let globalNotification = "No notification to show";
 let deferredPrompt;
 
+// --- INITIALIZATION & SESSION CHECK ---
 document.addEventListener("DOMContentLoaded", () => {
     const savedCode = localStorage.getItem("portalLoginCode");
     const savedView = localStorage.getItem("currentView") || "view-dashboard";
@@ -26,6 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
         loginBox.style.display = "block";
     }
 
+    // Safety Timeout
     setTimeout(() => {
         if (loader.style.display !== "none" && document.getElementById("portal").style.display === "none") {
             loader.style.display = "none";
@@ -33,6 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }, 8000);
 
+    // Mobile Back Button Logic
     window.onpopstate = function() {
         if (document.getElementById("portal").style.display === "block") {
             const current = getCurrentVisibleView();
@@ -88,18 +91,19 @@ async function login(isAuto = false, targetView = 'view-dashboard') {
 
         localStorage.setItem("portalLoginCode", code);
 
-        // CLEAR AND POPULATE
+        // POPULATE DATA
         handlePermissions(data[3].values);
         populateStudentProfile(student, mRow);
         renderFees(student[1], mRow, data[2].values);
         setupDateSheet(data[3].values, mRow[14]);
         renderAttendance(student[1], data[4].values);
 
-        // FINAL UI TRANSITION
+        // TRANSITION UI
         loader.style.display = "none";
-        loginBox.style.display = "none"; // Explicitly hide login
-        portal.style.display = "block";   // Explicitly show portal
+        loginBox.style.display = "none"; 
+        portal.style.display = "block";   
         document.getElementById("notifIcon").style.display = "block";
+        document.getElementById("installBtn").style.display = "none"; // Hide inside portal
         
         if (!history.state) history.pushState({view: 'dashboard'}, "");
         showView(targetView);
@@ -112,30 +116,37 @@ async function login(isAuto = false, targetView = 'view-dashboard') {
     }
 }
 
+// --- PWA INSTALL LOGIC ---
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Only show if not logged in
+    if (document.getElementById("portal").style.display === "none") {
+        document.getElementById("installBtn").style.display = "block";
+    }
+});
+
+document.getElementById("installBtn").onclick = async () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') document.getElementById("installBtn").style.display = "none";
+        deferredPrompt = null;
+    }
+};
+
 // --- ATTENDANCE LOGIC ---
 function renderAttendance(adm, rows) {
     if (!rows || rows.length < 4) return;
-    
-    // Find student row starting from C4 (index 3)
     const studentRow = rows.slice(3).find(r => r[2] == adm);
     const months = [
-        { name: "April", col: 33 },   // AH
-        { name: "May", col: 65 },     // BN
-        { name: "June", col: 96 },    // CS
-        { name: "July", col: 128 },   // DY
-        { name: "August", col: 160 }, // FE
-        { name: "September", col: 191 }, // GJ
-        { name: "October", col: 223 },   // HP
-        { name: "November", col: 254 },  // IU
-        { name: "December", col: 286 },  // KA
-        { name: "January", col: 318 },   // LG
-        { name: "February", col: 348 },  // MK
-        { name: "March", col: 380 }      // NQ
+        { name: "April", col: 33 }, { name: "May", col: 65 }, { name: "June", col: 96 },
+        { name: "July", col: 128 }, { name: "August", col: 160 }, { name: "September", col: 191 },
+        { name: "October", col: 223 }, { name: "November", col: 254 }, { name: "December", col: 286 },
+        { name: "January", col: 318 }, { name: "February", col: 348 }, { name: "March", col: 380 }
     ];
 
-    let html = "";
-    let cardsHtml = "";
-
+    let html = "", cardsHtml = "";
     if (studentRow) {
         months.forEach(m => {
             let val = studentRow[m.col] || "0";
@@ -146,13 +157,11 @@ function renderAttendance(adm, rows) {
         html = "<tr><td colspan='2'>No attendance records found</td></tr>";
         cardsHtml = "No attendance records found";
     }
-
     document.getElementById("attBody").innerHTML = html;
     document.getElementById("attCards").innerHTML = cardsHtml;
 }
 
-// --- REST OF THE FUNCTIONS (SAME AS ORIGINAL) ---
-
+// --- NAVIGATION FUNCTIONS ---
 function showView(viewId, isHardwareBack = false) {
     const views = ['view-dashboard', 'view-fees', 'view-attendance', 'view-datesheet', 'view-result'];
     views.forEach(v => {
@@ -161,7 +170,6 @@ function showView(viewId, isHardwareBack = false) {
     });
     localStorage.setItem("currentView", viewId);
     if (!isHardwareBack && viewId !== 'view-dashboard') history.pushState({view: viewId}, "");
-    document.getElementById("installBtn").style.display = "none";
     window.scrollTo(0,0);
 }
 
@@ -175,6 +183,7 @@ function logout() {
     location.reload();
 }
 
+// --- FEE RENDERING ---
 function renderFees(adm, mData, fRows) {
     let monthly = parseFloat(mData[4]) || 0;
     let remain = parseFloat(mData[3]) || 0;
@@ -187,7 +196,7 @@ function renderFees(adm, mData, fRows) {
             let amt = parseFloat(r[5]) || 0;
             if (r[7] === "2026-27" && r[6]?.toLowerCase() === "monthly fees") totalPaid += amt;
             tableHtml += `<tr><td>${r[1]||''}</td><td>${r[0]||''}</td><td>₹${amt}</td><td>${r[6]||''}</td><td>${r[7]||''}</td><td>${r[8]||''}</td><td>${r[9]||''}</td><td>${r[10]||''}</td><td>${r[11]||''}</td></tr>`;
-            cardsHtml += `<div class="fee-card"><b>Date:</b> ${r[1]} | <b>Amt:</b> ₹${amt}<br><b>Type:</b> ${r[6]}</div>`;
+            cardsHtml += `<div class="fee-card"><span class="label">Date:</span> ${r[1]}<br><span class="label">Amount:</span> ₹${amt}</div>`;
         }
     });
 
@@ -207,9 +216,27 @@ function renderFees(adm, mData, fRows) {
     const balEl = document.getElementById("feeBalance");
     balEl.innerText = "₹" + balance;
     balEl.style.color = balance > 0 ? "red" : "green";
+
+    populateFeeSelectors(parseFloat(mData[9]) || 1000, monthly, parseFloat(mData[7]) || 0);
     setupPaymentLink(balance, "payBalanceBtn");
 }
 
+function populateFeeSelectors(exFee, monthly, transport) {
+    const t = document.getElementById("calcTuitionMonths"), tr = document.getElementById("calcTransportMonths"), ex = document.getElementById("calcExamMonths"), res = document.getElementById("calcTotal");
+    if(!t || !tr || !ex || !res) return;
+    t.innerHTML = tr.innerHTML = ex.innerHTML = "";
+    for(let i=0; i<=12; i++) t.innerHTML += `<option value="${i}">${i}</option>`;
+    for(let i=0; i<=11; i++) tr.innerHTML += `<option value="${i}">${i}</option>`;
+    for(let i=0; i<=2; i++) ex.innerHTML += `<option value="${i}">${i}</option>`;
+    const updateCalc = () => {
+        let total = (t.value * (monthly - originalDiscount)) + (tr.value * transport) + (ex.value * (exFee/2));
+        res.innerText = "₹" + Math.round(total);
+        setupPaymentLink(total, "payNowBtn");
+    };
+    t.onchange = tr.onchange = ex.onchange = updateCalc;
+}
+
+// Rest of original helpers (setupDateSheet, populateStudentProfile, etc.)
 function handlePermissions(rows) {
     if (!rows) return;
     if (rows[13]?.[10] === "Publish") { 
@@ -280,7 +307,9 @@ function setupSendScreenshotButtons() {
         window.location.href = `https://wa.me/917830968000?text=${msg}`;
     };
     const b1 = document.getElementById("sendScreenshotBalanceBtn");
+    const b2 = document.getElementById("sendScreenshotCalcBtn");
     if(b1) b1.onclick = handler;
+    if(b2) b2.onclick = handler;
 }
 
 function showNotification() {
@@ -288,7 +317,7 @@ function showNotification() {
     overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px;";
     overlay.innerHTML = `<div style="background:white; padding:20px; border-radius:10px; max-width:400px; width:100%; text-align:center;">
         <h3 style="color:#0b3d91;">📢 School Notice</h3>
-        <p style="white-space:pre-wrap; text-align:left;">${globalNotification}</p>
+        <p style="white-space:pre-wrap; text-align:left; font-size:14px;">${globalNotification}</p>
         <button onclick="this.parentElement.parentElement.remove()" style="background:#0b3d91; color:white; border:none; padding:10px 20px; border-radius:5px;">Close</button>
     </div>`;
     document.body.appendChild(overlay);
