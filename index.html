@@ -1,11 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YEXFSFGVNP"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-YEXFSFGVNP');
+</script>
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Student Portal</title>
+    <title>GyanSetu - Student Portal</title>
     <link rel="icon" type="image/png" href="images/logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -41,8 +50,12 @@
         .nav-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
         .nav-btn { background: white; padding: 25px 10px; border-radius: 12px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1); font-weight: bold; color: #0b3d91; cursor: pointer; border: none; }
         .nav-btn i { font-size: 28px; display: block; margin-bottom: 8px; color: #d4af37; }
-        .nav-btn.frozen { opacity: 0.5; cursor: not-allowed; background: #eee; }
-
+        ./* Change this to make the button look normal even if it has the class */
+.nav-btn.frozen { 
+    opacity: 1; 
+    cursor: pointer; 
+    background: white; 
+}
         /* Content Blocks */
         .section-title{ background:#d4af37; color:black; padding:12px; margin:15px; border-radius:6px; font-size:18px; font-weight:bold; text-align:center; }
         .profile{ text-align:left; background:white; margin:15px; padding:20px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
@@ -88,7 +101,7 @@
 <div class="header">
     <div id="notifIcon" class="notif-bell" onclick="showNotification()" style="display:none;"><i class="fas fa-bell"></i></div>
     <img src="images/logo.png" class="logo">
-    <h2>Student Portal</h2>
+    <h2>GyanSetu - Student Portal</h2>
 </div>
 
 <div class="loader" id="loader" style="display: block;">
@@ -126,7 +139,9 @@
             <div class="nav-btn" onclick="showView('view-fees')"><i class="fas fa-file-invoice-dollar"></i>Fees</div>
             <div class="nav-btn" onclick="showView('view-attendance')"><i class="fas fa-calendar-check"></i>Attendance</div>
             <div id="btn-datesheet" class="nav-btn frozen"><i class="fas fa-calendar-alt"></i>Date-Sheet</div>
-            <div id="btn-result" class="nav-btn frozen"><i class="fas fa-poll"></i>Result</div>
+           <div class="nav-btn" onclick="showView('view-result')">
+    <i class="fas fa-poll"></i>Result
+</div>
         </div>
         
         <div style="text-align:center; margin:30px;"><button onclick="logout()" style="background:#666;">Logout</button></div>
@@ -210,9 +225,8 @@
     </div>
 
     <div id="view-result" style="display:none">
-        <div class="profile" style="text-align:center;"><h3>Results are not published yet</h3></div>
-        <button class="back-btn" onclick="showView('view-dashboard')">← Back to Dashboard</button>
-    </div>
+    <!-- Content generated dynamically by script.js -->
+</div>
 
 </div>
 
