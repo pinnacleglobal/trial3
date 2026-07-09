@@ -387,13 +387,46 @@ function setupDateSheet(rows, studentClass) {
     const bodyEl = document.getElementById("dsBody");
     if(bodyEl) bodyEl.innerHTML = html || "<tr><td colspan='2'>Nothing to show</td></tr>";
 }
-function setupPaymentLink(amount, btnId) {
-    const btn = document.getElementById(btnId); if(!btn) return;
-    btn.onclick = () => {
-        if (amount <= 0) return alert("Enter amount > 0");
-        const note = encodeURIComponent(`${document.getElementById("adm").innerText} ${document.getElementById("studentName").innerText} FEE`);
-        window.location.href = `upi://pay?pa=pinnacleglobalschool.62697340@hdfcbank&pn=Pinnacle Global School&am=${amount}&cu=INR&tn=${note}`;
-    };
+
+function showPaymentModal(amount){
+
+document.getElementById("payAmount").innerText=Math.round(amount);
+
+document.getElementById("payStudent").innerText=
+document.getElementById("studentName").innerText;
+
+document.getElementById("payAdm").innerText=
+document.getElementById("adm").innerText;
+
+document.getElementById("paymentModal").style.display="block";
+
+}
+
+function closePaymentModal(){
+
+document.getElementById("paymentModal").style.display="none";
+
+}
+function setupPaymentLink(amount, btnId){
+
+const btn=document.getElementById(btnId);
+
+if(!btn) return;
+
+btn.onclick=()=>{
+
+if(amount<=0){
+
+alert("Enter amount greater than zero");
+
+return;
+
+}
+
+showPaymentModal(amount);
+
+};
+
 }
 
 function setupSendScreenshotButtons() {
