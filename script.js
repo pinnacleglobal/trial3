@@ -6,12 +6,13 @@ const sheets = {
     fees: encodeURIComponent("Fees Collection"),
     aw: encodeURIComponent("AW"),
     ds: encodeURIComponent("DS n Notice"),
-    att: encodeURIComponent("Attendance")
+    att: encodeURIComponent("Attendance"),
+    res: encodeURIComponent("Res")
 };
 
 let originalDiscount = 0;
 let globalNotification = "No notification to show";
-let deferredPrompt;
+let currentUserData = {}; 
 
 document.addEventListener("DOMContentLoaded", () => {
     const savedCode = localStorage.getItem("portalLoginCode");
@@ -22,13 +23,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("loader").style.display = "none";
         document.getElementById("loginBox").style.display = "block";
     }
-
-    window.onpopstate = function() {
-        if (document.getElementById("portal").style.display === "block") {
-            const current = getCurrentVisibleView();
-            if (current !== 'view-dashboard') showView('view-dashboard', true);
-        }
-    };
 });
 
 async function login(isAuto = false, targetView = 'view-dashboard') {
@@ -47,11 +41,11 @@ async function login(isAuto = false, targetView = 'view-dashboard') {
     loader.style.display = "block";
 
     try {
-        // PRIORITY FETCH: Get basic student info and notices first
         const priorityUrls = [
             `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheets.aw}?key=${apiKey}`,
             `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheets.master}?key=${apiKey}`,
-            `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheets.ds}?key=${apiKey}`
+            `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheets.ds}?key=${apiKey}`,
+            `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheets.res}?key=${apiKey}`
         ];
 
         const pResponses = await Promise.all(priorityUrls.map(url => fetch(url)));
@@ -64,22 +58,27 @@ async function login(isAuto = false, targetView = 'view-dashboard') {
         }
 
         const mRow = pData[1].values.find(r => r[1] == student[1]);
-        if (!mRow) { alert("Data Not Found. Contact School Admin"); logout(); return; }
+        
+        // Store student info for result processing
+        currentUserData = {
+            adm: student[1],
+            name: student[3],
+            class: mRow[14]
+        };
 
         localStorage.setItem("portalLoginCode", code);
-
-        // Render Dashboard Immediately
+        
+        // Setup UI
         handlePermissions(pData[2].values);
         populateStudentProfile(student, mRow);
         setupDateSheet(pData[2].values, mRow[14]);
+        renderResult(pData[2].values, pData[3].values); // Process Result page
 
         loader.style.display = "none";
         portal.style.display = "block";
         document.getElementById("notifIcon").style.display = "block";
-        document.getElementById("installBtn").style.display = "none";
         showView(targetView);
 
-        // BACKGROUND FETCH: Fees and Attendance load while user looks at dashboard
         fetchBackgroundData(student[1], mRow);
 
     } catch (e) {
@@ -88,6 +87,87 @@ async function login(isAuto = false, targetView = 'view-dashboard') {
         loginBox.style.display = "block";
     }
 }
+
+function renderResult(dsRows, resRows) {
+    const resultView = document.getElementById("view-result");
+    
+    // Check K16 for Publish status (Row index 15, Column index 10)
+    const isPublished = dsRows[15]?.[10] === "Publish";
+    // Check K17 for Heading (Row index 16, Column index 10)
+    const examHeading = dsRows[16]?.[10] || "Examination Result";
+
+    // IF UN-PUBLISHED
+    if (!isPublished) {
+        resultView.innerHTML = `
+            <div class="section-title">Result</div>
+            <div class="profile" style="text-align:center; padding: 50px 20px;">
+                <h3 style="color: #666;">No result to show</h3>
+            </div>
+            <button class="back-btn" onclick="showView('view-dashboard')">← Back to Dashboard</button>`;
+        return;
+    }
+
+    // IF PUBLISHED - Logic to fetch data
+    let marksCol = 5; // Col F
+    let gradeCol = 6; // Col G
+    if (examHeading === "Annual Exam") {
+        marksCol = 11; // Col L
+        gradeCol = 12; // Col M
+    }
+
+    // Find student in Res sheet (Column B)
+    const studentIdx = resRows.findIndex(r => r[1] == currentUserData.adm);
+    if (studentIdx === -1) {
+        resultView.innerHTML = `<div class="profile"><h3>Data not found.</h3></div><button class="back-btn" onclick="showView('view-dashboard')">← Back to Dashboard</button>`;
+        return;
+    }
+
+    // Determine subject count
+    let subCount = 6;
+    const cls = currentUserData.class;
+    if (["Nursery", "LKG", "UKG"].includes(cls)) subCount = 3;
+    else if (["1st", "2nd", "3rd", "4th", "5th"].includes(cls)) subCount = 5;
+
+    let tableRows = "";
+    let totalMarks = 0;
+    const startRow = studentIdx + 5; // 5 cells below admission number cell
+
+    for (let i = 0; i < subCount; i++) {
+        const row = resRows[startRow + i];
+        if (row) {
+            const subject = row[0] || "-";
+            const marks = parseFloat(row[marksCol]) || 0;
+            const grade = row[gradeCol] || "-";
+            totalMarks += marks;
+            tableRows += `<tr><td>${subject}</td><td>${marks}</td><td>${grade}</td></tr>`;
+        }
+    }
+
+    const percentage = (totalMarks / subCount).toFixed(2);
+
+    resultView.innerHTML = `
+        <div class="section-title">${examHeading}</div>
+        <div class="profile">
+            <h3 style="text-align:center; color:#0b3d91; margin-top:0;">Result</h3>
+            <div class="info"><span class="label">Student Name :</span> ${currentUserData.name}</div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr><th>Subject</th><th>Marks (out of 100)</th><th>Grade</th></tr>
+                    </thead>
+                    <tbody>${tableRows}</tbody>
+                </table>
+            </div>
+            <div style="margin-top:15px; border-top:1px solid #ddd; padding-top:10px;">
+                <div class="info"><span class="label">Total Marks :</span> ${totalMarks}</div>
+                <div class="info"><span class="label">Percentage :</span> ${percentage}%</div>
+            </div>
+        </div>
+        <button class="back-btn" onclick="showView('view-dashboard')">← Back to Dashboard</button>`;
+}
+// Ensure the existing functions like showView, logout, populateStudentProfile, etc., are present below
+
+// ... rest of your functions (fetchBackgroundData, renderAttendance, etc.) stay the same ...
 
 async function fetchBackgroundData(adm, mRow) {
     const urls = [
@@ -113,6 +193,11 @@ document.getElementById("installBtn").onclick = async () => {
     if (deferredPrompt) {
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
+     
+        if (typeof gtag === 'function') {
+            gtag('event', 'pwa_install_click', { 'outcome': outcome });
+        }
+   
         if (outcome === 'accepted') document.getElementById("installBtn").style.display = "none";
         deferredPrompt = null;
     }
@@ -133,12 +218,19 @@ function renderAttendance(adm, rows) {
 
 function showView(viewId, isHardwareBack = false) {
     const views = ['view-dashboard', 'view-fees', 'view-attendance', 'view-datesheet', 'view-result'];
+    
     views.forEach(v => {
         const el = document.getElementById(v);
         if(el) el.style.display = (v === viewId) ? 'block' : 'none';
     });
+
     localStorage.setItem("currentView", viewId);
-    if (!isHardwareBack && viewId !== 'view-dashboard') history.pushState({view: viewId}, "");
+
+    // If we are NOT pressing the back button, tell the browser to remember this page
+    if (!isHardwareBack && viewId !== 'view-dashboard') {
+        history.pushState({view: viewId}, "");
+    }
+    
     window.scrollTo(0,0);
 }
 
@@ -199,17 +291,31 @@ function populateFeeSelectors(exFee, monthly, transport) {
     t.onchange = tr.onchange = ex.onchange = updateCalc;
 }
 
-function handlePermissions(rows) {
-    if (!rows) return;
-    if (rows[13]?.[10] === "Publish") { 
-        const b = document.getElementById("btn-datesheet"); if(b) { b.classList.remove("frozen"); b.onclick = () => showView('view-datesheet'); }
+function handlePermissions(dsRows) {
+    if (!dsRows) return;
+    
+    // 1. Unfreeze Date-Sheet button EVERY TIME
+    const bDateSheet = document.getElementById("btn-datesheet"); 
+    if(bDateSheet) { 
+        bDateSheet.classList.remove("frozen"); 
+        bDateSheet.style.opacity = "1";
+        bDateSheet.style.cursor = "pointer";
+        // Force the click action to work
+        bDateSheet.onclick = () => showView('view-datesheet'); 
     }
-    if (rows[15]?.[10] === "Publish") { 
-        const b = document.getElementById("btn-result"); if(b) { b.classList.remove("frozen"); b.onclick = () => showView('view-result'); }
-    }
-    if (rows[19]?.[10] === "Publish") globalNotification = rows[20]?.[9] || "No notification";
-}
 
+    // 2. Result button logic (K16 - index 15)
+    const bResult = document.getElementById("btn-result");
+    if(bResult && dsRows[15]?.[10] === "Publish") {
+        bResult.classList.remove("frozen");
+        bResult.onclick = () => showView('view-result');
+    }
+    
+    // 3. Notification logic (K20 - index 19)
+    if (dsRows[19]?.[10] === "Publish") {
+        globalNotification = dsRows[20]?.[9] || "No notification";
+    }
+}
 function populateStudentProfile(aw, master) {
     document.getElementById("welcomeName").innerText = "Welcome, " + (aw[3] || "Student");
     document.getElementById("studentName").innerText = aw[3];
@@ -228,25 +334,59 @@ function populateStudentProfile(aw, master) {
         }
     }
 }
-
 function setupDateSheet(rows, studentClass) {
-    if (!rows || rows.length < 2) return;
-    const examType = rows[0]?.[1] || ""; 
-    document.getElementById("ds-title").innerText = "Date Sheet: " + examType;
+    const datesheetView = document.getElementById("view-datesheet");
+    
+    // Check K14 status (Row index 13, Column index 10)
+    const isPublished = rows && rows[13] && rows[13][10] === "Publish";
+
+    // IF UN-PUBLISHED - Matches the Result Page logic exactly
+    if (!isPublished) {
+        datesheetView.innerHTML = `
+            <div class="section-title">Date Sheet</div>
+            <div class="profile" style="text-align:center; padding: 50px 20px;">
+                <h3 style="color: #666;">No Datesheet to show</h3>
+            </div>
+            <button class="back-btn" onclick="showView('view-dashboard')">← Back to Dashboard</button>`;
+        return;
+    }
+
+    // IF PUBLISHED - Logic to fetch and display the table
+    const examType = rows[0]?.[1] || "Examination"; 
+    
+    // Re-insert the original structure for the published view
+    datesheetView.innerHTML = `
+        <div class="section-title" id="ds-title">Date Sheet: ${examType}</div>
+        <div class="table-container">
+            <table>
+                <thead><tr><th>Date</th><th>Subject</th></tr></thead>
+                <tbody id="dsBody"></tbody>
+            </table>
+        </div>
+        <button class="back-btn" onclick="showView('view-dashboard')">← Back to Dashboard</button>`;
+
     let classCol = -1;
-    for(let j=1; j<=15; j++) { if(rows[1][j] == studentClass) { classCol = j; break; } }
+    for(let j=1; j<=15; j++) { 
+        if(rows[1] && rows[1][j] == studentClass) { classCol = j; break; } 
+    }
+    
     let html = "";
     if(classCol !== -1) {
         if(examType.includes("Half Yearly") || examType.includes("Annual")) {
             html += `<tr class="ds-type-header"><td colspan="2">Minor Exams</td></tr>`;
-            [3, 4].forEach(idx => { if(rows[idx]?.[0]) html += `<tr><td>${rows[idx][0]}</td><td>${rows[idx][classCol] || '-'}</td></tr>`; });
+            [3, 4].forEach(idx => { 
+                if(rows[idx]?.[0]) html += `<tr><td>${rows[idx][0]}</td><td>${rows[idx][classCol] || '-'}</td></tr>`; 
+            });
             html += `<tr class="ds-type-header"><td colspan="2">Major Exams</td></tr>`;
         }
-        [6, 7, 8, 9, 10, 11].forEach(idx => { if(rows[idx]?.[0]) html += `<tr><td>${rows[idx][0]}</td><td>${rows[idx][classCol] || '-'}</td></tr>`; });
+        [6, 7, 8, 9, 10, 11].forEach(idx => { 
+            if(rows[idx]?.[0]) html += `<tr><td>${rows[idx][0]}</td><td>${rows[idx][classCol] || '-'}</td></tr>`; 
+        });
     }
-    document.getElementById("dsBody").innerHTML = html || "<tr><td colspan='2'>Nothing to show</td></tr>";
+    
+    const bodyEl = document.getElementById("dsBody");
+    if(bodyEl) bodyEl.innerHTML = html || "<tr><td colspan='2'>Nothing to show</td></tr>";
 }
-
 function setupPaymentLink(amount, btnId) {
     const btn = document.getElementById(btnId); if(!btn) return;
     btn.onclick = () => {
@@ -273,3 +413,26 @@ function showNotification() {
 }
 
 if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+// Add this at the very end of script.js
+window.addEventListener('DOMContentLoaded', () => {
+    // Check if the app is running in "standalone" mode (installed PWA)
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    const displayMode = isPWA ? 'PWA' : 'Browser';
+    
+    if (typeof gtag === 'function') {
+        gtag('event', 'app_launch', {
+            'display_mode': displayMode
+        });
+    }
+});
+
+// This listens for the mobile hardware back button
+window.onpopstate = function(event) {
+    if (document.getElementById("portal").style.display === "block") {
+        const current = getCurrentVisibleView();
+        // If the user is in a sub-page, take them back to the dashboard
+        if (current !== 'view-dashboard') {
+            showView('view-dashboard', true);
+        }
+    }
+};
